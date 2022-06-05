@@ -1,40 +1,27 @@
-﻿/*************************************************
- * XT
- * Copyright (C) 2013-2015 XT. Co., Ltd.
- * File name:      xt_log.h
- * Author:         张海涛
- * Version:        1.0.0
- * Date:           2016.12.07
- * Description:    日志处理
+/*************************************************
+ * Copyright:   XT Tech. Co., Ltd.
+ * File name:   xt_log.c
+ * Author:      xt
+ * Version:     1.0.0
+ * Date:        2022.06.04
+ * Code:        UTF-8(No BOM)
+ * Description: 日志模块实现
 *************************************************/
 
 #include "xt_log.h"
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
 #include <time.h>
 #include <errno.h>
-#include <string.h>
 #include <pthread.h>
-#include "cjson\cJSON.h"
+#include "cJSON.h"
 
 #ifdef _WINDOWS
 #include <time.h>
 #include <stdint.h>
 #include <windows.h>
-
-int gettimeofday(struct timeval *tv, void *tz)
-{
-    FILETIME ft;
-    uint64_t tmpres = 0;
-    static int tzflag = 0;
-
-    if (tv)
-    {
-        GetSystemTimeAsFileTime(&ft);
-
-        tmpres |= ft.dwHighDateTime;
-        tmpres <<= 32;
-        tmpres |= ft.dwLowDateTime;
 
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
 #define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
@@ -42,11 +29,23 @@ int gettimeofday(struct timeval *tv, void *tz)
 #define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
 #endif
 
-        /*converting file time to unix epoch*/
-        tmpres /= 10;  /*convert into microseconds*/
-        tmpres -= DELTA_EPOCH_IN_MICROSECS;
-        tv->tv_sec = (long)(tmpres / 1000000UL);
-        tv->tv_usec = (long)(tmpres % 1000000UL);
+int gettimeofday(struct timeval *tv, void *tz)
+{
+    FILETIME ft;
+    uint64_t tmp = 0;
+
+    if (tv)
+    {
+        GetSystemTimeAsFileTime(&ft);
+
+        tmp = ft.dwHighDateTime;
+        tmp <<= 32;
+        tmp |= ft.dwLowDateTime;
+        tmp /= 10;  /*convert into microseconds*/
+        tmp -= DELTA_EPOCH_IN_MICROSECS;
+
+        tv->tv_sec = (long)(tmp / 1000000UL);
+        tv->tv_usec = (long)(tmp % 1000000UL);
     }
 
     return 0;
@@ -56,18 +55,38 @@ int gettimeofday(struct timeval *tv, void *tz)
 #include <sys/time.h>
 #endif
 
-#define BUFF_SIZE       10240
 
-static char             LEVEL[] = "DIWE";
-static FILE             *g_log = NULL;
-static log_info         g_info = {0};
-static pthread_mutex_t  g_mutex;
+enum
+{
+    LOG_CYCLE_MINUTE,
+    LOG_CYCLE_HOUR,
+    LOG_CYCLE_DAY,
+    LOG_CYCLE_WEEK,
+};
+
+typedef struct _log_info
+{
+    char name[512];         // 日志文件名
+    int  level;             // 日志级别(调试,信息,警告,错误)
+    int  cycle;             // 日志文件保留周期(时,天,周)
+    int  backup;            // 日志文件保留数量
+    bool load;              // 是否已经加载数据
+    bool init;              // 是否已经初始化
+
+}log_info, *p_log_info;
+
+#define BUFF_SIZE           10240
+
+static char                 LEVEL[] = "DIWE";
+static FILE                *g_log = NULL;
+static log_info             g_info = {0};
+static pthread_mutex_t      g_mutex;
 
 /**
  *\brief      设置日志文件名
- *\param[in]  time_t timestamp  时间戳
- *\param[out] char *filename    文件名
- *\param[in]  int max           文件名最长
+ *\param[in]  int           timestamp   时间戳
+ *\param[out] char         *filename    文件名
+ *\param[in]  int           max         文件名最长
  *\return     无
  */
 void xt_log_set_filename(time_t timestamp, char *filename, int max)
@@ -75,157 +94,279 @@ void xt_log_set_filename(time_t timestamp, char *filename, int max)
     struct tm tm;
     localtime_s(&tm, &timestamp);
 
-    if (g_info.cycle == LOG_CYCLE_HOUR)
+    switch (g_info.cycle)
     {
-        snprintf(filename, max, "%s.%d%02d%02d-%02d", g_info.name, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour);
-    }
-    else
-    {
-        snprintf(filename, max, "%s.%d%02d%02d", g_info.name, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        case LOG_CYCLE_MINUTE:
+        {
+            snprintf(filename, max, "%s.%d%02d%02d-%02d%02d.txt", g_info.name, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
+            break;
+        }
+        case LOG_CYCLE_HOUR:
+        {
+            snprintf(filename, max, "%s.%d%02d%02d-%02d.txt", g_info.name, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour);
+            break;
+        }
+        default:
+        {
+            snprintf(filename, max, "%s.%d%02d%02d.txt", g_info.name, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+            break;
+        }
     }
 }
 
 /**
- *\brief      加载配置文件
- *\param[in]  const char *path 路径
- *\param[in]  void *json json根
- *\param[out] p_log_info info    文件名
- *\return     int 0-成功,~0-失败
+ *\brief      新建日志文件
+ *\param[in]  int           timestamp   时间戳
+ *\return     无
  */
-int xt_log_config(const char *path, void *json, p_log_info info)
+void xt_log_add_new(int timestamp)
 {
-    cJSON *root = (cJSON*)json;
+    char filename[512];
+    xt_log_set_filename(timestamp, filename, sizeof(filename));
+    freopen_s(&g_log, filename, "ab+", stderr); // 使用同一个句柄打开此文件
+}
 
-    if (NULL == root)
+/**
+ *\brief      删除旧日志文件
+ *\param[in]  int           timestamp   时间戳
+ *\return     无
+ */
+void xt_log_del_old(int timestamp)
+{
+    char filename[512] = "";
+    xt_log_set_filename(timestamp, filename, sizeof(filename));
+    _unlink(filename);                          // 删除旧文件
+    DBG("unlink %s", filename);
+}
+
+/**
+ *\brief      日志后台线程
+ *\return     空
+ */
+void *xt_log_thread(void *arg)
+{
+    bool proc;
+    int time_add;
+    int time_del;
+
+    while (true)
     {
-        printf("%s param is null\n", __FUNCTION__);
+        sleep(1);
+
+        time_add = (int)time(NULL);
+        
+        DBG("%d", time_add);
+
+        switch (g_info.cycle)
+        {
+            case LOG_CYCLE_MINUTE:
+            {
+                proc = ((time_add % 60) == 0);
+                break;
+            }
+            case LOG_CYCLE_HOUR:
+            {
+                proc = ((time_add % 3600) == 0);
+                break;
+            }
+            case LOG_CYCLE_DAY:
+            {
+                proc = ((time_add % 86400) == 0);
+                break;
+            }
+            case LOG_CYCLE_WEEK:
+            {
+                proc = ((time_add % 604800) == 0);
+                break;
+            }
+        }
+
+        if (!proc)
+        {
+            continue;
+        }
+
+        switch (g_info.cycle)
+        {
+            case LOG_CYCLE_MINUTE:
+            {
+                time_del = time_add - g_info.backup * 60;
+                break;
+            }
+            case LOG_CYCLE_HOUR:
+            {
+                time_del = time_add - g_info.backup * 3600;
+                break;
+            }
+            case LOG_CYCLE_DAY:
+            {
+                time_del = time_add - g_info.backup * 86400;
+                break;
+            }
+            case LOG_CYCLE_WEEK:
+            {
+                time_del = time_add - g_info.backup * 604800;
+                break;
+            }
+        }
+
+        xt_log_add_new(time_add);
+
+        xt_log_del_old(time_del);
+    }
+
+    return NULL;
+}
+
+/**
+ *\brief      加载配置文件
+ *\param[in]  const char    *path       日志文件所在目录
+ *\param[in]  void          *json       配置文件json根
+ *\return     0-成功
+ */
+int xt_log_parse_config(const char *path, void *json)
+{
+    if (NULL == path || NULL == json)
+    {
+        printf("%s|param is null\n", __FUNCTION__);
         return -1;
     }
 
-    cJSON *log = cJSON_GetObjectItem(root, "log");
+    cJSON *root = (cJSON*)json;
 
-    if (NULL == log)
+    cJSON *name = cJSON_GetObjectItem(root, "name");
+
+    if (NULL == name)
     {
-        printf("%s config no log node\n", __FUNCTION__);
+        printf("%s|config json no log.name node\n", __FUNCTION__);
         return -2;
     }
 
-    cJSON *file = cJSON_GetObjectItem(log, "file");
+    snprintf(g_info.name, sizeof(g_info.name), "%s%s", path, name->valuestring);
 
-    if (NULL == file)
-    {
-        printf("%s config no log.file node\n", __FUNCTION__);
-        return -3;
-    }
-
-    snprintf(info->name, sizeof(info->name), "%s%s", path, file->valuestring);
-
-    cJSON *level = cJSON_GetObjectItem(log, "level");
+    cJSON *level = cJSON_GetObjectItem(root, "level");
 
     if (NULL == level)
     {
-        printf("%s config no log.level node\n", __FUNCTION__);
+        printf("%s|config json no log.level node\n", __FUNCTION__);
         return -3;
     }
 
     if (0 == strcmp(level->valuestring, "debug"))
     {
-        info->level = LOG_LEVEL_DEBUG;
+        g_info.level = LOG_LEVEL_DEBUG;
     }
     else if (0 == strcmp(level->valuestring, "info"))
     {
-        info->level = LOG_LEVEL_INFO;
+        g_info.level = LOG_LEVEL_INFO;
     }
     else if (0 == strcmp(level->valuestring, "warn"))
     {
-        info->level = LOG_LEVEL_WARN;
+        g_info.level = LOG_LEVEL_WARN;
     }
     else if (0 == strcmp(level->valuestring, "error"))
     {
-        info->level = LOG_LEVEL_ERROR;
+        g_info.level = LOG_LEVEL_ERROR;
     }
     else
     {
-        printf("%s config no log.level value error\n", __FUNCTION__);
+        printf("%s|config json no log.level value error\n", __FUNCTION__);
         return -4;
     }
 
-    cJSON *cycle = cJSON_GetObjectItem(log, "cycle");
+    cJSON *cycle = cJSON_GetObjectItem(root, "cycle");
 
     if (NULL == cycle)
     {
-        printf("%s config no log.cycle node\n", __FUNCTION__);
+        printf("%s|config json no log.cycle node\n", __FUNCTION__);
         return -5;
     }
 
-    if (0 == strcmp(cycle->valuestring, "hour"))
+    if (0 == strcmp(cycle->valuestring, "minute"))
     {
-        info->cycle = LOG_CYCLE_HOUR;
+        g_info.cycle = LOG_CYCLE_MINUTE;
+    }
+    else if (0 == strcmp(cycle->valuestring, "hour"))
+    {
+        g_info.cycle = LOG_CYCLE_HOUR;
     }
     else if (0 == strcmp(cycle->valuestring, "day"))
     {
-        info->cycle = LOG_CYCLE_DAY;
+        g_info.cycle = LOG_CYCLE_DAY;
     }
     else if (0 == strcmp(cycle->valuestring, "week"))
     {
-        info->cycle = LOG_CYCLE_WEEK;
+        g_info.cycle = LOG_CYCLE_WEEK;
     }
     else
     {
-        printf("%s config no log.cycle value error\n", __FUNCTION__);
+        printf("%s|config no log.cycle value error\n", __FUNCTION__);
         return -6;
     }
 
-    cJSON *backup = cJSON_GetObjectItem(log, "backup");
+    cJSON *backup = cJSON_GetObjectItem(root, "backup");
 
     if (NULL == backup)
     {
-        printf("%s config no log.backup value error\n", __FUNCTION__);
+        printf("%s|config no log.backup value error\n", __FUNCTION__);
         return -7;
     }
 
-    info->backup = backup->valueint;
+    g_info.backup = backup->valueint;
+
+    g_info.load = true;
 
     return 0;
 }
-
 
 /**
  *\brief      初始化日志
  *\param[in]  p_log_info info   信息
  *\return     int 0-成功,~0-失败
  */
-int xt_log_init(p_log_info info)
+int xt_log_init()
 {
-    if (NULL == info ||
-        NULL == info->name ||
-        info->level < 0 ||
-        info->level > LOG_LEVEL_ERROR ||
-        info->cycle < 0 ||
-        info->cycle > LOG_CYCLE_WEEK ||
-        info->backup < 0)
+    if (!g_info.load)
     {
+        printf("%s|data is not load\n", __FUNCTION__);
         return -1;
     }
 
-    if (NULL != g_log)
+    if (g_info.init)
     {
-        xt_log_uninit();
+        printf("%s|inited\n", __FUNCTION__);
+        return -2;
     }
 
     pthread_mutex_init(&g_mutex, NULL);
-    pthread_mutex_lock(&g_mutex);
 
-    g_info = *info;
-    g_info.last_reopen_time = 0;
+    xt_log_add_new((int)time(NULL));
 
-    char filename[512] = "";
-    xt_log_set_filename(time(NULL), filename, sizeof(filename));
-    fopen_s(&g_log, filename, "ab+");
+    if (NULL == g_log)
+    {
+        return -3;
+    }
 
-    pthread_mutex_unlock(&g_mutex);
+    g_info.init = true;
 
-    return (NULL == g_log);
+    if (g_info.backup <= 0)
+    {
+        DBG("backup:%d", g_info.backup);
+        return 0;
+    }
+
+    pthread_t tid;
+    int ret = pthread_create(&tid, NULL, xt_log_thread, NULL);
+
+    if (ret != 0)
+    {
+        ERR("create thread fail, err:%d\n", ret);
+        return -3;
+    }
+
+    DBG("---------------------------------------------------");
+    DBG("ok");
+    return 0;
 }
 
 /**
@@ -234,7 +375,7 @@ int xt_log_init(p_log_info info)
  */
 void xt_log_uninit()
 {
-    if (NULL != g_log)
+    if (g_info.init && NULL != g_log)
     {
         fflush(g_log);
         fclose(g_log);
@@ -245,130 +386,31 @@ void xt_log_uninit()
 }
 
 /**
- *\brief      刷新日志
- *\return     int 是否更新文件
- */
-int xt_log_schedule()
-{
-    if (0 == g_info.backup)
-    {
-        return 0;
-    }
-
-    int reopen_time = 0;
-    int timestamp = (int)time(NULL);
-
-    switch (g_info.cycle)
-    {
-        case LOG_CYCLE_HOUR:
-        {
-            reopen_time = (timestamp + 28800) / 3600;
-            break;
-        }
-        case LOG_CYCLE_DAY:
-        {
-            reopen_time = (timestamp + 28800) / 86400;
-            break;
-        }
-        case LOG_CYCLE_WEEK:
-        {
-            reopen_time = (timestamp + 28800) / 604800;
-            break;
-        }
-    }
-
-    if (0 == g_info.last_reopen_time)
-    {
-        g_info.last_reopen_time = reopen_time;
-    }
-
-    if (reopen_time != g_info.last_reopen_time)
-    {
-        g_info.last_reopen_time = reopen_time;
-
-        switch (g_info.cycle)
-        {
-            case LOG_CYCLE_HOUR:
-            {
-                timestamp -= g_info.backup * 3600;
-                break;
-            }
-            case LOG_CYCLE_DAY:
-            {
-                timestamp -= g_info.backup * 86400;
-                break;
-            }
-            case LOG_CYCLE_WEEK:
-            {
-                timestamp -= g_info.backup * 604800;
-                break;
-            }
-        }
-
-        char filename[256] = "";
-        xt_log_set_filename(timestamp, filename, sizeof(filename));
-        _unlink(filename); // 删除旧文件
-        DBG("unlink %s", filename);
-
-        return true;
-    }
-
-    return false;
-}
-
-/**
- *\brief      新建日志
- *\return     无
- */
-void xt_log_reopen()
-{
-    char filename[256];
-    xt_log_set_filename(time(NULL), filename, sizeof(filename));
-    DBG("freopening %s", filename);
-    freopen_s(&g_log, filename, "ab+", stderr);
-    DBG("freopened %s", filename);
-}
-
-/**
- *\brief      反初始化日志
- *\return     无
- *\param[in]  int pid           进程ID
+ *\brief      写日志
  *\param[in]  const char *file  文件名
  *\param[in]  const char *func  函数名
  *\param[in]  int line          行号
  *\param[in]  int level         日志级别
  *\param[in]  const char *fmt   日志内容
+ *\return     无
  */
-void xt_log_write(int pid, const char *file, const char *func, int line, int level, const char *fmt, ...)
+void xt_log(const char *file, const char *func, int line, int level, const char *fmt, va_list arg)
 {
-    if (pid < 0 ||
-        level < LOG_LEVEL_DEBUG ||
-        level > LOG_LEVEL_ERROR ||
-        level < g_info.level ||
-        NULL == fmt ||
-        NULL == g_log)
-    {
-        return;
-    }
-
     int len;
     char buff[BUFF_SIZE];
     time_t sec;
-    va_list arg;
     struct tm tm;
     struct timeval tv;
-
 
     gettimeofday(&tv, NULL);
     sec = tv.tv_sec;
     localtime_s(&tm, &sec);
 
-    len = snprintf(buff, BUFF_SIZE, "%02d:%02d:%02d.%03d|%d|%c|%s:%d|%s|", 
-                   tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000, pid, LEVEL[level], file, line, func);
+    len = snprintf(buff, BUFF_SIZE, "%02d:%02d:%02d.%03d|%d|%d|%c|%s:%d|%s|",
+                   tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000,
+                   getpid(), gettid(), LEVEL[level], file, line, func);
 
-    va_start(arg, fmt);
     len += vsnprintf(&buff[len], BUFF_SIZE - len, fmt, arg);
-    va_end(arg);
 
     if (len >= BUFF_SIZE)
     {
@@ -376,42 +418,50 @@ void xt_log_write(int pid, const char *file, const char *func, int line, int lev
     }
 
     buff[len] = '\n';
-
     fwrite(buff, 1, len + 1, g_log); // 加1为多了个\n
     fflush(g_log);
 }
 
-void xt_log(const char *fmt, ...)
+/**
+ *\brief      写日志不带锁
+ *\param[in]  const char *file  文件名
+ *\param[in]  const char *func  函数名
+ *\param[in]  int line          行号
+ *\param[in]  int level         日志级别
+ *\param[in]  const char *fmt   日志内容
+ *\return     无
+ */
+void xt_log_write(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
-    int len;
-    char buff[BUFF_SIZE];
-    time_t sec;
     va_list arg;
-    struct tm tm;
-    struct timeval tv;
-
-    if (NULL == g_log || NULL == fmt)
-    {
-        return;
-    }
-
-    gettimeofday(&tv, NULL);
-    sec = tv.tv_sec;
-    localtime_s(&tm, &sec);
-
-    len = snprintf(buff, BUFF_SIZE, "%02d:%02d:%02d.%03d|", tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000);
 
     va_start(arg, fmt);
-    len += vsnprintf(&buff[len], BUFF_SIZE - len, fmt, arg);
+
+    xt_log(file, func, line, level, fmt, arg);
+
     va_end(arg);
+}
 
-    if (len >= BUFF_SIZE)
-    {
-        len = (int)strlen(buff);
-    }
+/**
+ *\brief      写日志带锁
+ *\param[in]  const char *file  文件名
+ *\param[in]  const char *func  函数名
+ *\param[in]  int line          行号
+ *\param[in]  int level         日志级别
+ *\param[in]  const char *fmt   日志内容
+ *\return     无
+ */
+void xt_log_write_lock(const char *file, const char *func, int line, int level, const char *fmt, ...)
+{
+    va_list arg;
 
-    buff[len] = '\n';
+    va_start(arg, fmt);
 
-    fwrite(buff, 1, len + 1, g_log);
-    fflush(g_log);
+    pthread_mutex_lock(&g_mutex);
+
+    xt_log(file, func, line, level, fmt, arg);
+
+    pthread_mutex_unlock(&g_mutex);
+
+    va_end(arg);
 }
