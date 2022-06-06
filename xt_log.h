@@ -20,12 +20,10 @@
 #define gettid()        GetCurrentThreadId()
 #define strncasecmp     strnicmp
 #define PATH_SEGM       '\\'
-
 #define DBG(...) xt_log_write_lock( __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)
 #define MSG(...) xt_log_write_lock( __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  __VA_ARGS__)
 #define WAR(...) xt_log_write_lock( __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  __VA_ARGS__)
 #define ERR(...) xt_log_write_lock( __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, __VA_ARGS__)
-
 #else
 #define PATH_SEGM       '/'
 #define DBG (args...) xt_log_write(__FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, ##args)
