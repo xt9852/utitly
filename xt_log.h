@@ -1,13 +1,11 @@
-/*************************************************
- * Copyright:   XT Tech. Co., Ltd.
- * File name:   xt_log.h
- * Author:      xt
- * Version:     1.0.0
- * Date:        2022.06.04
- * Code:        UTF-8(No BOM)
- * Description: 日志模块接口定义
-*************************************************/
-
+/**
+ *\copyright    XT Tech. Co., Ltd.
+ *\file         xt_log.h
+ *\author       xt
+ *\version      1.0.0
+ *\date         2016.12.07
+ *\brief        日志模块接口定义,UTF-8(No BOM)
+ */
 #ifndef _XT_LOG_H_
 #define _XT_LOG_H_
 
@@ -48,55 +46,56 @@
 #define NULL 0
 #endif
 
+/// 日志级别
 enum
 {
-    LOG_LEVEL_DEBUG,
-    LOG_LEVEL_INFO,
-    LOG_LEVEL_WARN,
-    LOG_LEVEL_ERROR
+    LOG_LEVEL_DEBUG,    ///< 调试
+    LOG_LEVEL_INFO,     ///< 信息
+    LOG_LEVEL_WARN,     ///< 警告
+    LOG_LEVEL_ERROR     ///< 错误
 };
 
 
 /**
- *\brief      加载配置文件
- *\param[in]  const char    *path  日志文件所在目录
- *\param[in]  void          *json  配置文件json根
- *\return     0-成功
+ *\brief        加载配置文件
+ *\param[in]    path    日志文件所在目录
+ *\param[in]    json    配置文件json根
+ *\return       0       成功
  */
 int xt_log_parse_config(const char *path, void *json);
 
 /**
- *\brief      初始化日志
- *\param[in]  p_log_info info   信息
- *\return     0-成功
+ *\brief        初始化日志
+ *\param[in]    info    信息
+ *\return       0       成功
  */
 int xt_log_init();
 
 /**
- *\brief      反初始化日志
- *\return     无
+ * \brief        反初始化日志
+ * \return       无
  */
 void xt_log_uninit();
 
 /**
- *\brief      写日志不带锁
- *\param[in]  const char *file  文件名
- *\param[in]  const char *func  函数名
- *\param[in]  int line          行号
- *\param[in]  int level         日志级别
- *\param[in]  const char *fmt   日志内容
- *\return     无
+ *\brief        写日志不带锁
+ *\param[in]    file    文件名
+ *\param[in]    func    函数名
+ *\param[in]    line    行号
+ *\param[in]    level   日志级别
+ *\param[in]    fmt     日志内容
+ *\return               无
  */
 void xt_log_write(const char *file, const char *func, int line, int level, const char *fmt, ...);
 
 /**
- *\brief      写日志带锁
- *\param[in]  const char *file  文件名
- *\param[in]  const char *func  函数名
- *\param[in]  int line          行号
- *\param[in]  int level         日志级别
- *\param[in]  const char *fmt   日志内容
- *\return     无
+ *\brief        写日志带锁
+ *\param[in]    file    文件名
+ *\param[in]    func    函数名
+ *\param[in]    line    行号
+ *\param[in]    level   日志级别
+ *\param[in]    fmt     日志内容
+ *\return               无
  */
 void xt_log_write_lock(const char *file, const char *func, int line, int level, const char *fmt, ...);
 

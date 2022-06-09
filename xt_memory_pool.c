@@ -1,23 +1,21 @@
-﻿/*************************************************
- * Copyright:   XT Tech. Co., Ltd.
- * File name:   xt_memory_pool.c
- * Author:      xt
- * Version:     1.0.0
- * Date:        2022.06.04
- * Code:        UTF-8(No BOM)
- * Description: 内存池实现
-*************************************************/
-
+﻿/**
+ *\copyright    XT Tech. Co., Ltd.
+ *\file         xt_memory_pool.c
+ *\author       xt
+ *\version      1.0.0
+ *\date         2015.8.29
+ *\brief        内存池实现,UTF-8(No BOM)
+ */
 #include "xt_memory_pool.h"
 #include <stdlib.h>
 
 
 /**
  *\brief        初始化内存池
- *\param[in]    p_memory_pool   pool    池
- *\param[in]    int             size    内存块大小
- *\param[in]    int             count   初始内存块数量,要大于1,后续每次增加其一半
- *\return       0-成功
+ *\param[in]    pool    池
+ *\param[in]    size    内存块大小
+ *\param[in]    count   初始内存块数量,要大于1,后续每次增加其一半
+ *\return       0       成功
  */
 int memory_pool_init(p_memory_pool pool, int size, int count)
 {
@@ -44,9 +42,9 @@ int memory_pool_init(p_memory_pool pool, int size, int count)
 
 /**
  *\brief        链表删除内存
- *\param[in]    void            *mem    内存
- *\param[in]    void            *param  参数
- *\return       0-成功
+ *\param[in]    mem     内存
+ *\param[in]    param   参数
+ *\return       0       成功
  */
 int LIST_DEL_MEM(void *mem, void *param)
 {
@@ -56,8 +54,8 @@ int LIST_DEL_MEM(void *mem, void *param)
 
 /**
  *\brief        反初始化内存池
- *\param[in]    p_memory_pool   pool    池
- *\return       0-成功
+ *\param[in]    pool    池
+ *\return       0       成功
  */
 int memory_pool_uninit(p_memory_pool pool)
 {
@@ -83,9 +81,9 @@ int memory_pool_uninit(p_memory_pool pool)
 
 /**
  *\brief        从内存池得到内存
- *\param[in]    p_memory_pool   pool    池
- *\param[in]    void          **mem     内存块
- *\return       0-成功
+ *\param[in]    pool    池
+ *\param[in]    mem     内存块
+ *\return       0       成功
  */
 int memory_pool_get(p_memory_pool pool, void **mem)
 {
@@ -115,9 +113,9 @@ int memory_pool_get(p_memory_pool pool, void **mem)
 
 /**
  *\brief        回收内存到内存池
- *\param[in]    p_memory_pool   pool    池
- *\param[in]    void           *mem     内存块
- *\return       0-成功
+ *\param[in]    pool    池
+ *\param[in]    mem     内存块
+ *\return       0       成功
  */
 int memory_pool_put(p_memory_pool pool, void *mem)
 {

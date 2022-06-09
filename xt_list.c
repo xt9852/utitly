@@ -1,24 +1,23 @@
-/*************************************************
- * Copyright:   XT Tech. Co., Ltd.
- * File name:   xt_list.c
- * Author:      xt
- * Version:     1.0.0
- * Date:        2022.06.04
- * Code:        UTF-8(No BOM)
- * Description: 链表数据结构实现
-*************************************************/
-
+/**
+ *\copyright    XT Tech. Co., Ltd.
+ *\file         xt_list.c
+ *\author       xt
+ *\version      1.0.0
+ *\date         2015.8.29
+ *\brief        链表数据结构实现,UTF-8(No BOM)
+ */
 #include <stdlib.h>
 #include "xt_list.h"
 #include "xt_log.h"
 
-#define SV          sizeof(void*)
-#define NODE_SIZE   1024
+#define SV          sizeof(void*)   ///< void指针大小
+
+#define NODE_SIZE   1024            ///< 节点初始大小
 
 /**
  *\brief        链表初始化
- *\param[in]    p_list  list    链表
- *\return       0-成功
+ *\param[in]    list    链表
+ *\return       0       成功
  */
 int list_init(p_list list)
 {
@@ -42,8 +41,8 @@ int list_init(p_list list)
 
 /**
  *\brief        链表反初始化
- *\param[in]    p_list  list    链表
- *\return       0-成功
+ *\param[in]    list    链表
+ *\return       0       成功
  */
 int list_uninit(p_list list)
 {
@@ -64,9 +63,9 @@ int list_uninit(p_list list)
 
 /**
  *\brief        在链表尾部添加数据
- *\param[in]    p_list  list    链表
- *\param[in]    void   *data    数据
- *\return       0-成功
+ *\param[in]    list    链表
+ *\param[in]    data    数据
+ *\return       0       成功
  */
 int list_tail_push(p_list list, void *data)
 {
@@ -117,6 +116,8 @@ int list_tail_push(p_list list, void *data)
             DBG("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
         }
 
+        free(old_data);
+
         list->tail++;
         list->data[list->tail] = data;
     }
@@ -132,9 +133,9 @@ int list_tail_push(p_list list, void *data)
 
 /**
  *\brief        从链表头部得到数据
- *\param[in]    p_list  list    链表
- *\param[out]   void  **list    数据
- *\return       0-成功
+ *\param[in]    list    链表
+ *\param[out]   list    数据
+ *\return       0       成功
  */
 int list_head_pop(p_list list, void **data)
 {
@@ -176,10 +177,12 @@ int list_head_pop(p_list list, void **data)
 
 /**
  *\brief        调用指定的回调函数遍历链表
- *\param[in]    p_list          list    链表
- *\param[in]    LIST_PROC       proc    回调函数
- *\param[in]    void           *param   自定义数据
- *\return       0-成功,1-无节点
+ *\param[in]    list    链表
+ *\param[in]    proc    回调函数
+ *\param[in]    param   自定义数据
+ *\return       0       成功\n
+                1       无节点\n
+                其它    失败
  */
 int list_proc(p_list list, LIST_PROC proc, void *param)
 {

@@ -1,13 +1,11 @@
-/*************************************************
- * Copyright:   XT Tech. Co., Ltd.
- * File name:   xt_http.c
- * Author:      xt
- * Version:     1.0.0
- * Date:        2022.06.04
- * Code:        UTF-8(No BOM)
- * Description: HTTP模块实现
-*************************************************/
-
+/**
+ *\copyright    XT Tech. Co., Ltd.
+ *\file         xt_http.c
+ *\author       xt
+ *\version      1.0.0
+ *\date         2022-02-08
+ *\brief        HTTP模块实现,UTF-8(No BOM)
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,12 +19,12 @@
 #define HTTP_FILE_404   "404"
 
 
-HTTP_PROCESS g_http_process;
+HTTP_PROCESS g_http_process;    ///< HTTP主线程
 
 /**
  * \brief      得到URI中的参数,/cpu-data?clk=1 HTTP/1.1
- * \param[in]  char *uri    URI地址
-  * \return    char* URI中参数指针
+ * \param[in]  uri  URI地址
+  * \return         URI中参数指针
  */
 char* http_get_arg(char *uri)
 {
@@ -56,8 +54,8 @@ char* http_get_arg(char *uri)
 
 /**
  * \brief      处理客户端的请求
- * \param[in]  int client_sock   客户端socket
- * \return     0-成功
+ * \param[in]  client_sock  客户端socket
+ * \return     0            成功
  */
 int http_client_request(int client_sock, char *buff, int buff_size)
 {
@@ -134,8 +132,8 @@ int http_client_request(int client_sock, char *buff, int buff_size)
 
 /**
  * \brief      客户端处理函数
- * \param[in]  void *param  客刻端socket
- * \return     指向void*数据
+ * \param[in]  param        客刻端socket
+ * \return                  指向void*数据
  */
 void* http_client_thread(void *param)
 {
@@ -158,8 +156,8 @@ void* http_client_thread(void *param)
 
 /**
  * \brief      处理客户端的连接
- * \param[in]  int listen_sock   监听socket
- * \return     0-成功
+ * \param[in]  listen_sock  监听socket
+ * \return     0            成功
  */
 int http_server_wait_client_connect(int listen_sock)
 {
@@ -206,8 +204,8 @@ int http_server_wait_client_connect(int listen_sock)
 
 /**
  * \brief      创建监听socket
- * \param[in]  int port   端口
- * \return     0-成功
+ * \param[in]  port         端口
+ * \return     0            成功
  */
 int http_server_create_listen_socket(int port)
 {
@@ -278,8 +276,8 @@ int http_server_create_listen_socket(int port)
 
 /**
  * \brief      HTTP服务主线程
- * \param[in]  void *port  监听端口号
- * \return     指向void*数据
+ * \param[in]  port         监听端口号
+ * \return                  指向void*数据
  */
 void* http_server_thread(void *port)
 {
@@ -308,8 +306,8 @@ void* http_server_thread(void *port)
 
 /**
  * \brief      初始化http
- * \param[in]  int port      端口号
- * \return     0-成功
+ * \param[in]  port         端口号
+ * \return     0            成功
  */
 int http_init(int port, HTTP_PROCESS proc)
 {

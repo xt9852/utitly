@@ -1,13 +1,11 @@
-/*************************************************
- * Copyright:   XT Tech. Co., Ltd.
- * File name:   xt_pinyin.c
- * Author:      xt
- * Version:     1.0.0
- * Date:        2022.06.04
- * Code:        UTF-8(No BOM)
- * Description: 拼音模块实现
-*************************************************/
-
+/**
+ *\copyright    XT Tech. Co., Ltd.
+ *\file         xt_pinyin.c
+ *\author       xt
+ *\version      1.0.0
+ *\date         2022-02-08
+ *\brief        拼音模块实现,UTF-8(No BOM)
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,17 +13,20 @@
 #include "xt_log.h"
 
 
-bool            g_pinyin_malloc = false;    // 拼音数据是于malloc分配的
-unsigned char  *g_pinyin        = NULL;     // 拼音数据
+bool            g_pinyin_malloc = false;    ///< 拼音数据是于malloc分配的
 
+unsigned char  *g_pinyin        = NULL;     ///< 拼音数据
+
+/// 拼音组数据
 typedef struct _peyin_unit
 {
-    char        *m;
-    int         len;
+    char        *m;                         ///< 拼音字母
+    int         len;                        ///< 拼音长
 
 }peyin_unit, *p_peyin_unit;
 
-const peyin_unit g_pinyin_sm[] = {          // 拼音声母
+/// 拼音声母
+const peyin_unit g_pinyin_sm[] = {          
     { "",   1},
     { "ch", 2},
     { "sh", 2},
@@ -52,7 +53,8 @@ const peyin_unit g_pinyin_sm[] = {          // 拼音声母
     { "z",  1}
 };
 
-const peyin_unit g_pinyin_ym[] = {          // 拼音韵母
+/// 拼音韵母
+const peyin_unit g_pinyin_ym[] = {          
     { "",     1},
     { "iang", 4},
     { "iong", 4},
@@ -90,10 +92,10 @@ const peyin_unit g_pinyin_ym[] = {          // 拼音韵母
 };
 
 /**
- * \brief   从资源中加载拼音数据
- * \param   [in]    char            *res_type    资源类名,"PINYIN"
- * \param   [in]    int              res_id      资源ID
- * \return  0-成功
+ * \brief       从资源中加载拼音数据
+ * \param[in]   res_type    资源类名,"PINYIN"
+ * \param[in]   res_id      资源ID
+ * \return      0           成功
  */
 int pinyin_init_res(char *res_type, int res_id)
 {
@@ -142,9 +144,9 @@ int pinyin_init_res(char *res_type, int res_id)
 }
 
 /**
- * \brief   从文件中加载拼音数据
- * \param   [in]  const char    *filename   文件名
- * \return  0-成功
+ * \brief       从文件中加载拼音数据
+ * \param[in]   filename    文件名
+ * \return      0           成功
  */
 int pinyin_init(const char *filename)
 {
@@ -186,12 +188,12 @@ int pinyin_init(const char *filename)
 }
 
 /**
- * \brief   将gbk转成拼音
- * \param   [in]        const char      *src        源串
- * \param   [in]        unsigned int     src_len    源串长
- * \param   [out]       short           *dst        目标串
- * \param   [in/out]    unsigned int    *dst_len    目标串最大长,目标串长
- * \return  0-成功
+ * \brief       将gbk转成拼音
+ * \param[in]   src         源串
+ * \param[in]   src_len     源串长
+ * \param[out]  dst         目标串
+ * \param[out]  dst_len     目标串最大长,目标串长
+ * \return      0           成功
  */
 int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len)
 {

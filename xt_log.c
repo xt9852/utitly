@@ -1,13 +1,11 @@
-/*************************************************
- * Copyright:   XT Tech. Co., Ltd.
- * File name:   xt_log.c
- * Author:      xt
- * Version:     1.0.0
- * Date:        2022.06.04
- * Code:        UTF-8(No BOM)
- * Description: 日志模块实现
-*************************************************/
-
+/**
+ *\copyright    XT Tech. Co., Ltd.
+ *\file         xt_log.c
+ *\author       xt
+ *\version      1.0.0
+ *\date         2016.12.07
+ *\brief        日志模块实现,UTF-8(No BOM)
+ */
 #include "xt_log.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,39 +53,40 @@ int gettimeofday(struct timeval *tv, void *tz)
 #include <sys/time.h>
 #endif
 
-
+/// 日志保留周期
 enum
 {
-    LOG_CYCLE_MINUTE,
-    LOG_CYCLE_HOUR,
-    LOG_CYCLE_DAY,
-    LOG_CYCLE_WEEK,
+    LOG_CYCLE_MINUTE,       ///< 分钟
+    LOG_CYCLE_HOUR,         ///< 小时
+    LOG_CYCLE_DAY,          ///< 天
+    LOG_CYCLE_WEEK,         ///< 周
 };
 
+/// 日志信息
 typedef struct _log_info
 {
-    char name[512];         // 日志文件名
-    int  level;             // 日志级别(调试,信息,警告,错误)
-    int  cycle;             // 日志文件保留周期(时,天,周)
-    int  backup;            // 日志文件保留数量
-    bool load;              // 是否已经加载数据
-    bool init;              // 是否已经初始化
+    char name[512];         ///< 日志文件名
+    int  level;             ///< 日志级别(调试,信息,警告,错误)
+    int  cycle;             ///< 日志文件保留周期(时,天,周)
+    int  backup;            ///< 日志文件保留数量
+    bool load;              ///< 是否已经加载数据
+    bool init;              ///< 是否已经初始化
 
 }log_info, *p_log_info;
 
-#define BUFF_SIZE           10240
+#define BUFF_SIZE           10240               ///< 日志缓冲区在小
 
-static char                 LEVEL[] = "DIWE";
-static FILE                *g_log = NULL;
-static log_info             g_info = {0};
-static pthread_mutex_t      g_mutex;
+static char                 LEVEL[] = "DIWE";   ///< 日志级别标记(调试,信息,警告,错误)
+static FILE                *g_log   = NULL;     ///< 日志文件句柄
+static log_info             g_info  = {0};      ///< 日志信息
+static pthread_mutex_t      g_mutex;            ///< 日志锁
 
 /**
- *\brief      设置日志文件名
- *\param[in]  int           timestamp   时间戳
- *\param[out] char         *filename    文件名
- *\param[in]  int           max         文件名最长
- *\return     无
+ *\brief        设置日志文件名
+ *\param[in]    timestamp   时间戳
+ *\param[out]   filename    文件名
+ *\param[in]    max         文件名最长
+ *\return                   无
  */
 void xt_log_set_filename(time_t timestamp, char *filename, int max)
 {
@@ -115,9 +114,9 @@ void xt_log_set_filename(time_t timestamp, char *filename, int max)
 }
 
 /**
- *\brief      新建日志文件
- *\param[in]  int           timestamp   时间戳
- *\return     无
+ *\brief        新建日志文件
+ *\param[in]    timestamp   时间戳
+ *\return                   无
  */
 void xt_log_add_new(int timestamp)
 {
@@ -127,9 +126,9 @@ void xt_log_add_new(int timestamp)
 }
 
 /**
- *\brief      删除旧日志文件
- *\param[in]  int           timestamp   时间戳
- *\return     无
+ *\brief        删除旧日志文件
+ *\param[in]    timestamp   时间戳
+ *\return                   无
  */
 void xt_log_del_old(int timestamp)
 {
@@ -140,8 +139,8 @@ void xt_log_del_old(int timestamp)
 }
 
 /**
- *\brief      日志后台线程
- *\return     空
+ *\brief        日志后台线程
+ *\return       空
  */
 void *xt_log_thread(void *arg)
 {
@@ -154,7 +153,7 @@ void *xt_log_thread(void *arg)
         sleep(1);
 
         time_add = (int)time(NULL);
-        
+
         DBG("%d", time_add);
 
         switch (g_info.cycle)
@@ -219,10 +218,10 @@ void *xt_log_thread(void *arg)
 }
 
 /**
- *\brief      加载配置文件
- *\param[in]  const char    *path       日志文件所在目录
- *\param[in]  void          *json       配置文件json根
- *\return     0-成功
+ *\brief        加载配置文件
+ *\param[in]    path        日志文件所在目录
+ *\param[in]    json        配置文件json根
+ *\return       0           成功
  */
 int xt_log_parse_config(const char *path, void *json)
 {
@@ -320,9 +319,8 @@ int xt_log_parse_config(const char *path, void *json)
 }
 
 /**
- *\brief      初始化日志
- *\param[in]  p_log_info info   信息
- *\return     int 0-成功,~0-失败
+ *\brief        初始化日志
+ *\return       0           成功
  */
 int xt_log_init()
 {
@@ -370,8 +368,8 @@ int xt_log_init()
 }
 
 /**
- *\brief      反初始化日志
- *\return     无
+ *\brief        反初始化日志
+ *\return       无
  */
 void xt_log_uninit()
 {
@@ -386,13 +384,13 @@ void xt_log_uninit()
 }
 
 /**
- *\brief      写日志
- *\param[in]  const char *file  文件名
- *\param[in]  const char *func  函数名
- *\param[in]  int line          行号
- *\param[in]  int level         日志级别
- *\param[in]  const char *fmt   日志内容
- *\return     无
+ *\brief        写日志
+ *\param[in]    file        文件名
+ *\param[in]    func        函数名
+ *\param[in]    line        行号
+ *\param[in]    level       日志级别
+ *\param[in]    fmt         日志内容
+ *\return                   无
  */
 void xt_log(const char *file, const char *func, int line, int level, const char *fmt, va_list arg)
 {
@@ -423,13 +421,13 @@ void xt_log(const char *file, const char *func, int line, int level, const char 
 }
 
 /**
- *\brief      写日志不带锁
- *\param[in]  const char *file  文件名
- *\param[in]  const char *func  函数名
- *\param[in]  int line          行号
- *\param[in]  int level         日志级别
- *\param[in]  const char *fmt   日志内容
- *\return     无
+ *\brief        写日志不带锁
+ *\param[in]    file        文件名
+ *\param[in]    func        函数名
+ *\param[in]    line        行号
+ *\param[in]    level       日志级别
+ *\param[in]    fmt         日志内容
+ *\return                   无
  */
 void xt_log_write(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
@@ -443,13 +441,13 @@ void xt_log_write(const char *file, const char *func, int line, int level, const
 }
 
 /**
- *\brief      写日志带锁
- *\param[in]  const char *file  文件名
- *\param[in]  const char *func  函数名
- *\param[in]  int line          行号
- *\param[in]  int level         日志级别
- *\param[in]  const char *fmt   日志内容
- *\return     无
+ *\brief        写日志带锁
+ *\param[in]    file        文件名
+ *\param[in]    func        函数名
+ *\param[in]    line        行号
+ *\param[in]    level       日志级别
+ *\param[in]    fmt         日志内容
+ *\return                   无
  */
 void xt_log_write_lock(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
