@@ -161,32 +161,28 @@ int md5_get(const char *data, int data_len, p_md5_info md5)
     unsigned int     D         = 0x10325476;
     unsigned int     times     = data_len / 64;
     unsigned int     remain    = data_len % 64;
-    unsigned int     padding   = 64 - remain;
+    unsigned int     padding   = (remain > 55) ? (128 - remain - 1 - 8) : (64 - 1 - 8); // 1个字节为0x80,8个字节为数据比特长
+    unsigned int     count_pos = (remain > 55) ? (128 - 8) : (64 - 8);                  // 比特长所在位置
     unsigned __int64 bit_count = data_len * 8;
+    unsigned char    buff[128];
 
     DBG("md5 times:%d remain:%d padding:%d", times, remain, padding);
 
     for (unsigned int i = 0; i < times; i++)
     {
-        PROCESS((unsigned int *)&data[times * 64]);
+        PROCESS((unsigned int *)&data[i * 64]);
     }
 
-    if (padding >= 9)   // 补齐一次就可以
+    memcpy(buff, &data[times * 64], remain);    // 剩余数据
+    buff[remain] = 0x80;                        // 补齐1
+    memset(&buff[remain + 1], 0, padding);      // 补齐0
+    memcpy(&buff[count_pos], &bit_count, 8);    // 数据比特长
+
+    PROCESS((unsigned int *)buff);
+
+    if (remain > 55)
     {
-        unsigned char buff[64];
-        memcpy(buff, data, remain);                 // 剩余数据
-        buff[remain] = 0x80;                        // 补齐的第1个字符
-        memset(&buff[remain + 1], 0, padding - 9);  // 补齐其余的0
-        memcpy(&buff[56], &bit_count, 8);           // 补齐原数据比特长
-
-        PROCESS((unsigned int *)buff);
-
-        DBG("3. a:%x b:%x c:%x d:%x", a, b, c, d);
-
-        for (int i = 0; i < 16; i++)
-        {
-            DBG("3. x[%d]:%x", i, x[i]);
-        }
+        PROCESS((unsigned int *)(buff + 64));
     }
 
     md5->A = A;

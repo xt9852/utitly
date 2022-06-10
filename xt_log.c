@@ -69,6 +69,7 @@ typedef struct _log_info
     int  level;             ///< 日志级别(调试,信息,警告,错误)
     int  cycle;             ///< 日志文件保留周期(时,天,周)
     int  backup;            ///< 日志文件保留数量
+    bool clean;             ///< 首次打开日志文件时是否清空文件内容
     bool load;              ///< 是否已经加载数据
     bool init;              ///< 是否已经初始化
 
@@ -116,13 +117,14 @@ void xt_log_set_filename(time_t timestamp, char *filename, int max)
 /**
  *\brief        新建日志文件
  *\param[in]    timestamp   时间戳
+ *\param[in]    clean       是否清空文件内容
  *\return                   无
  */
-void xt_log_add_new(int timestamp)
+void xt_log_add_new(int timestamp, bool clean)
 {
     char filename[512];
     xt_log_set_filename(timestamp, filename, sizeof(filename));
-    freopen_s(&g_log, filename, "ab+", stderr); // 使用同一个句柄打开此文件
+    freopen_s(&g_log, filename, clean ? "wb+" : "ab+", stderr); // 使用同一个句柄打开此文件
 }
 
 /**
@@ -209,7 +211,7 @@ void *xt_log_thread(void *arg)
             }
         }
 
-        xt_log_add_new(time_add);
+        xt_log_add_new(time_add, false);
 
         xt_log_del_old(time_del);
     }
@@ -313,6 +315,10 @@ int xt_log_parse_config(const char *path, void *json)
 
     g_info.backup = backup->valueint;
 
+    cJSON *clean = cJSON_GetObjectItem(root, "clean");
+
+    g_info.clean = (NULL != clean) ? clean->valueint : false;
+
     g_info.load = true;
 
     return 0;
@@ -338,7 +344,7 @@ int xt_log_init()
 
     pthread_mutex_init(&g_mutex, NULL);
 
-    xt_log_add_new((int)time(NULL));
+    xt_log_add_new((int)time(NULL), g_info.clean);
 
     if (NULL == g_log)
     {

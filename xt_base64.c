@@ -121,13 +121,13 @@ int base64_to(const char *data, int data_len, char *base64, int *base_len)
 
 	int times           = data_len / 3;
 	int remain          = data_len % 3;
-	int completion      = remain ? (3 - remain) : 0;    // 需要补齐的数量
-    int data_pos_end    = times * 3;
-	int base64_pos_end  = times * 4;
+	int padding         = remain ? (3 - remain) : 0;    // 需要补齐的数量
+    int pos_end_data    = times * 3;
+	int pos_end_base64  = times * 4;
 	int len             = (times + (remain > 0 ? 1 : 0) ) * 4;
 
-    DBG("times:%d remain:%d completion:%d data_pos_end:%d base64_pos_end:%d len:%d",
-         times, remain, completion, data_pos_end, base64_pos_end, len);
+    DBG("times:%d remain:%d padding:%d pos_end_data:%d pos_end_base64:%d len:%d",
+         times, remain, padding, pos_end_data, pos_end_base64, len);
 
     if (*base_len <= len)
     {
@@ -147,16 +147,16 @@ int base64_to(const char *data, int data_len, char *base64, int *base_len)
 	}
 
 	to_base64 tail = {0};
-	memcpy(&tail, &data[data_pos_end], remain);
+	memcpy(&tail, &data[pos_end_data], remain);
 
 	for (int i = 0; i < remain + 1; i++)    // 因为1个字节变成base64时大于1位所以加1
 	{
-		base64[base64_pos_end + i] = BASE64_STRING[to(&(tail.o), i)];
+		base64[pos_end_base64 + i] = BASE64_STRING[to(&(tail.o), i)];
 	}
 
-	for (int i = 0; i < completion; i++)
+	for (int i = 0; i < padding; i++)
 	{
-		base64[len - completion + i] = 0x3d; // '='
+		base64[len - padding + i] = 0x3d;   // '='
 	}
 
     base64[len] = '\0';
@@ -239,12 +239,12 @@ int base64_from(const char *base64, int base64_len, char *data, int *data_len)
 
 		item++;
 	}
-    
+
     free(input);
 
     *data_len = times * 3 - completion;
     data[*data_len] = '\0';
-    
+
     DBG("times:%d completion:%d len:%d", times, completion, *data_len);
 	return 0;
 }
