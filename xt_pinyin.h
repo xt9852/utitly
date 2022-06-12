@@ -3,8 +3,8 @@
  *\file         xt_pinyin.h
  *\author       xt
  *\version      1.0.0
- *\date         2022-02-08
- *\brief        拼音模块接口定义,UTF-8(No BOM)
+ *\date         2022.02.08
+ *\brief        拼音模块定义,UTF-8(No BOM)
  */
 #ifndef _XT_PINYIN_H_
 #define _XT_PINYIN_H_

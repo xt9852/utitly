@@ -4,29 +4,29 @@
  *\author       xt
  *\version      1.0.0
  *\date         2015.8.29
- *\brief        链表数据结构接口定义,UTF-8(No BOM)
+ *\brief        链表数据结构定义,UTF-8(No BOM)
  */
-#ifndef _XT_LIST_STACK_H_
-#define _XT_LIST_STACK_H_
+#ifndef _XT_LIST_H_
+#define _XT_LIST_H_
 
 #include <pthread.h>
 
 /// 链表
 typedef struct _list
 {
-    void          **data;   ///< 指向数据数组
+    void          **data;       ///< 指向数据数组
 
-    int             size;   ///< 数据数组大小
+    int             size;       ///< 数据数组大小
 
-    int             count;  ///< 当前节点数量
+    int             count;      ///< 当前节点数量
 
-    int             head;   ///< 头节点数组下标
+    int             head;       ///< 头节点数组下标
 
-    int             tail;   ///< 尾节点数组下标
+    int             tail;       ///< 尾节点数组下标
 
-    pthread_mutex_t mutex;  ///< 线程锁
+    pthread_mutex_t mutex;      ///< 线程锁
 
-} list, *p_list;            ///< 链表类型
+} list, *p_list;                ///< 链表类型
 
 /**
  *\brief        链表初始化

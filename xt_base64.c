@@ -3,7 +3,7 @@
  *\file         xt_base64.c
  *\author       xt
  *\version      1.0.0
- *\date         2012-06-25
+ *\date         2012.06.25
  *\brief        BASE64模块实现,UTF-8(No BOM)
  */
 #include "xt_base64.h"

@@ -4,11 +4,10 @@
  *\author       xt
  *\version      1.0.0
  *\date         2015.8.29
- *\brief        内存池实现,UTF-8(No BOM)
+ *\brief        内存池模块实现,UTF-8(No BOM)
  */
 #include "xt_memory_pool.h"
 #include <stdlib.h>
-
 
 /**
  *\brief        初始化内存池
@@ -28,13 +27,11 @@ int memory_pool_init(p_memory_pool pool, int size, int count)
 
     pool->mem_size = size;
 
-    pool->free = (p_list)malloc(sizeof(list));
-
-    list_init(pool->free);
+    list_init(&(pool->free));
 
     for (int i = 0; i < count; i++)
     {
-        list_tail_push(pool->free, malloc(size));
+        list_tail_push(&(pool->free), malloc(size));
     }
 
     return 0;
@@ -64,13 +61,9 @@ int memory_pool_uninit(p_memory_pool pool)
         return -1;
     }
 
-    list_proc(pool->free, LIST_DEL_MEM, NULL);
+    list_proc(&(pool->free), LIST_DEL_MEM, NULL);
 
-    list_uninit(pool->free);
-
-    free(pool->free);
-
-    pool->free = NULL;
+    list_uninit(&(pool->free));
 
     pool->count = 0;
 
@@ -92,7 +85,7 @@ int memory_pool_get(p_memory_pool pool, void **mem)
         return -1;
     }
 
-    int ret = list_head_pop(pool->free, mem);
+    int ret = list_head_pop(&(pool->free), mem);
 
     if (-2 == ret)   // 没有取到数据
     {
@@ -102,7 +95,7 @@ int memory_pool_get(p_memory_pool pool, void **mem)
 
         for (int i = 0; i < count; i++)
         {
-            list_tail_push(pool->free, malloc(pool->mem_size));
+            list_tail_push(&(pool->free), malloc(pool->mem_size));
         }
 
         pool->count += count;
@@ -124,7 +117,7 @@ int memory_pool_put(p_memory_pool pool, void *mem)
         return -1;
     }
 
-    list_tail_push(pool->free, mem);
+    list_tail_push(&(pool->free), mem);
 
     return 0;
 }

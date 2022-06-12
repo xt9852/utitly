@@ -4,7 +4,7 @@
  *\author       xt
  *\version      1.0.0
  *\date         2022.06.04
- *\brief        字符集转码接口定义,UTF-8(No BOM)
+ *\brief        字符集转码定义,UTF-8(No BOM)
  */
 #ifndef _XT_CHARACTER_SET_H_
 #define _XT_CHARACTER_SET_H_

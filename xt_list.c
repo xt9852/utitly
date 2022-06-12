@@ -76,7 +76,7 @@ int list_tail_push(p_list list, void *data)
 
     pthread_mutex_lock(&(list->mutex));
 
-    DBG("----size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    DBG("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     if (0 == list->count)
     {
@@ -124,7 +124,7 @@ int list_tail_push(p_list list, void *data)
 
     list->count++;
 
-    DBG("++++size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    DBG("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     pthread_mutex_unlock(&(list->mutex));
 
@@ -134,7 +134,7 @@ int list_tail_push(p_list list, void *data)
 /**
  *\brief        从链表头部得到数据
  *\param[in]    list    链表
- *\param[out]   list    数据
+ *\param[out]   data    数据
  *\return       0       成功
  */
 int list_head_pop(p_list list, void **data)
@@ -198,10 +198,12 @@ int list_proc(p_list list, LIST_PROC proc, void *param)
 
     pthread_mutex_lock(&(list->mutex));
 
-    for (int i = 0; i < list->count && 0 != proc(list->data[(list->head + i) % list->size], param); i++);
+    for (int i = 0; i < list->count; i++)
+    {
+        proc(list->data[(list->head + i) % list->size], param);
+    }
 
     pthread_mutex_unlock(&(list->mutex));
 
     return 0;
 }
-

@@ -3,11 +3,11 @@
  *\file         xt_base64.h
  *\author       xt
  *\version      1.0.0
- *\date         2012-06-25
- *\brief        BASE64模块接口定义,UTF-8(No BOM)
+ *\date         2012.06.25
+ *\brief        BASE64模块定义,UTF-8(No BOM)
  */
-#ifndef XT_BASE64_H
-#define XT_BASE64_H
+#ifndef _XT_BASE64_H_
+#define _XT_BASE64_H_
 
 /**
  *\brief      得到BASE64串

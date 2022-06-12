@@ -3,11 +3,11 @@
  *\file         xt_md5.h
  *\author       xt
  *\version      1.0.0
- *\date         2022-02-08
- *\brief        MD5模块接口定义,UTF-8(No BOM)
+ *\date         2022.02.08
+ *\brief        MD5模块定义,UTF-8(No BOM)
  */
-#ifndef XT_MD5_H
-#define XT_MD5_H
+#ifndef _XT_MD5_H_
+#define _XT_MD5_H_
 
 /// md5数据结构
 typedef struct _md5_info

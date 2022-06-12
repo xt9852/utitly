@@ -3,7 +3,7 @@
  *\file         xt_md5.h
  *\author       xt
  *\version      1.0.0
- *\date         2022-02-08
+ *\date         2022.02.08
  *\brief        MD5模块实现,UTF-8(No BOM)
  */
 #include "xt_md5.h"

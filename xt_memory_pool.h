@@ -4,7 +4,7 @@
  *\author       xt
  *\version      1.0.0
  *\date         2015.8.29
- *\brief        内存池接口定义,UTF-8(No BOM)
+ *\brief        内存池模块定义,UTF-8(No BOM)
  */
 #ifndef _XT_MEMORY_POOL_H_
 #define _XT_MEMORY_POOL_H_
@@ -15,8 +15,8 @@
 typedef struct _memory_pool
 {
     int     mem_size;           ///< 内存块大小
-    int     count;              ///< 内存数量
-    p_list  free;               ///< 空闲的内存块链表
+    int     count;              ///< 总分配内存块数
+    list    free;               ///< 空闲的内存块链表
 
 } memory_pool, *p_memory_pool;  ///< 内存池类型
 
