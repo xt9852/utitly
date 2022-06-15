@@ -12,21 +12,20 @@
 #include <Windows.h>
 #include "xt_log.h"
 
-
 bool            g_pinyin_malloc = false;    ///< 拼音数据是于malloc分配的
 
 unsigned char  *g_pinyin        = NULL;     ///< 拼音数据
 
 /// 拼音组数据
-typedef struct _peyin_unit
+typedef struct _xt_peyin
 {
     char        *m;                         ///< 拼音字母
     int         len;                        ///< 拼音长
 
-}peyin_unit, *p_peyin_unit;
+} xt_peyin, *p_xt_peyin;
 
 /// 拼音声母
-const peyin_unit g_pinyin_sm[] = {          
+const xt_peyin g_pinyin_sm[] = {
     { "",   1},
     { "ch", 2},
     { "sh", 2},
@@ -54,7 +53,7 @@ const peyin_unit g_pinyin_sm[] = {
 };
 
 /// 拼音韵母
-const peyin_unit g_pinyin_ym[] = {          
+const xt_peyin g_pinyin_ym[] = {
     { "",     1},
     { "iang", 4},
     { "iong", 4},
@@ -152,7 +151,7 @@ int pinyin_init(const char *filename)
 {
     if (NULL == filename)
     {
-        printf("%s filename is null\n", __FUNCTION__);
+        DBG("%s filename is null");
         return -1;
     }
 
@@ -161,7 +160,7 @@ int pinyin_init(const char *filename)
 
     if (NULL == fp)
     {
-        printf("open %s error %d", filename, GetLastError());
+        DBG("open %s error %d", filename, GetLastError());
         return -1;
     }
 

@@ -12,7 +12,7 @@
 #include <pthread.h>
 
 /// 链表
-typedef struct _list
+typedef struct _xt_list
 {
     void          **data;       ///< 指向数据数组
 
@@ -26,21 +26,21 @@ typedef struct _list
 
     pthread_mutex_t mutex;      ///< 线程锁
 
-} list, *p_list;                ///< 链表类型
+} xt_list, *p_xt_list;          ///< 链表类型
 
 /**
  *\brief        链表初始化
  *\param[in]    list    链表
  *\return       0       成功
  */
-int list_init(p_list list);
+int list_init(p_xt_list list);
 
 /**
  *\brief        链表反初始化
  *\param[in]    list    链表
  *\return       0       成功
  */
-int list_uninit(p_list list);
+int list_uninit(p_xt_list list);
 
 /**
  *\brief        在链表尾部添加数据
@@ -48,7 +48,7 @@ int list_uninit(p_list list);
  *\param[in]    data    数据
  *\return       0       成功
  */
-int list_tail_push(p_list list, void *data);
+int list_tail_push(p_xt_list list, void *data);
 
 /**
  *\brief        从链表头部得到数据
@@ -56,7 +56,7 @@ int list_tail_push(p_list list, void *data);
  *\param[out]   list    数据
  *\return       0       成功
  */
-int list_head_pop(p_list list, void **data);
+int list_head_pop(p_xt_list list, void **data);
 
 /**
  *\brief        回调函数
@@ -74,6 +74,6 @@ typedef int (*LIST_PROC)(void *data, void *param);
  *\param[in]    param   自定义数据
  *\return       0       成功
  */
-int list_proc(p_list list, LIST_PROC proc, void *param);
+int list_proc(p_xt_list list, LIST_PROC proc, void *param);
 
 #endif

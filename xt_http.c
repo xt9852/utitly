@@ -11,15 +11,11 @@
 #include <string.h>
 #include <pthread.h>
 #include "xt_http.h"
-#include "xt_log.h"
 
 #define NETWORK_IPV4
 #define HTTP_HEAD_200   "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
 #define HTTP_HEAD_404   "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: "
 #define HTTP_FILE_404   "404"
-
-
-HTTP_PROCESS g_http_process;    ///< HTTP主线程
 
 /**
  * \brief      得到URI中的参数,/cpu-data?clk=1 HTTP/1.1
@@ -54,12 +50,14 @@ char* http_get_arg(char *uri)
 
 /**
  * \brief      处理客户端的请求
- * \param[in]  client_sock  客户端socket
+ * \param[in]  http         http服务数据
  * \return     0            成功
  */
-int http_client_request(int client_sock, char *buff, int buff_size)
+int http_client_request(p_xt_http http, char *buff, int buff_size)
 {
-    DBG("----------------------beg----");
+    DBG("----------------------beg----client_sock:%d", http->client_sock);
+
+    int client_sock = http->client_sock;
 
     int data_len = recv(client_sock, buff, buff_size, 0);
 
@@ -94,7 +92,7 @@ int http_client_request(int client_sock, char *buff, int buff_size)
         int   head_len;
         int   content_len = buff_size;
 
-        int ret = g_http_process(uri, arg, 1, content, &content_len);
+        int ret = http->proc(uri, arg, 1, content, &content_len);
 
         if (ret == 200)
         {
@@ -132,18 +130,18 @@ int http_client_request(int client_sock, char *buff, int buff_size)
 
 /**
  * \brief      客户端处理函数
- * \param[in]  param        客刻端socket
- * \return                  指向void*数据
+ * \param[in]  http         http服务数据
+ * \return                  空
  */
-void* http_client_thread(void *param)
+void* http_client_thread(p_xt_http http)
 {
     DBG("running...");
 
-    int client_sock = (int)param;
+    int client_sock = http->client_sock;
     int buff_size = 1024*100;
     char *buff = malloc(buff_size);
 
-    while (http_client_request(client_sock, buff, buff_size) >= 0);
+    while (http_client_request(http, buff, buff_size) >= 0);
 
     DBG("close client socket %d", client_sock);
     shutdown(client_sock, 0);
@@ -156,10 +154,10 @@ void* http_client_thread(void *param)
 
 /**
  * \brief      处理客户端的连接
- * \param[in]  listen_sock  监听socket
+ * \param[in]  http         http服务数据
  * \return     0            成功
  */
-int http_server_wait_client_connect(int listen_sock)
+int http_server_wait_client_connect(p_xt_http http)
 {
     DBG("accepting...");
 
@@ -171,13 +169,15 @@ int http_server_wait_client_connect(int listen_sock)
 
     int addr_len = sizeof(client_addr);
 
-    int client_sock = accept(listen_sock, (struct sockaddr *)&client_addr, &addr_len);
+    int client_sock = accept(http->listen_sock, (struct sockaddr *)&client_addr, &addr_len);
 
     if (client_sock < 0)
     {
         ERR("accept fail, errno %d", errno);
         return -1;
     }
+
+    http->client_sock = client_sock;
 
     char addr_str[64];
 
@@ -190,7 +190,8 @@ int http_server_wait_client_connect(int listen_sock)
     DBG("accept client socket:%d addr:%s", client_sock, addr_str);
 
     pthread_t tid;
-    int ret = pthread_create(&tid, NULL, http_client_thread, (void*)client_sock);
+
+    int ret = pthread_create(&tid, NULL, http_client_thread, http);
 
     if (ret != 0)
     {
@@ -207,7 +208,7 @@ int http_server_wait_client_connect(int listen_sock)
  * \param[in]  port         端口
  * \return     0            成功
  */
-int http_server_create_listen_socket(int port)
+int http_server_create_listen_socket(unsigned short port)
 {
     int addr_family;
     int ip_protocol;
@@ -233,12 +234,6 @@ int http_server_create_listen_socket(int port)
     bzero(&listen_addr.sin6_addr.un, sizeof(listen_addr.sin6_addr.un));
     inet6_ntoa_r(listen_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
 #endif
-
-    int is = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-    if (is == INVALID_SOCKET)
-    {
-        ERR("create socket(AF_INET, SOCK_RAW, IPPROTO_ICMP) fail, errno %d", is);
-    }
 
     int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
 
@@ -276,14 +271,14 @@ int http_server_create_listen_socket(int port)
 
 /**
  * \brief      HTTP服务主线程
- * \param[in]  port         监听端口号
- * \return                  指向void*数据
+ * \param[in]  http         http服务数据
+ * \return                  空
  */
-void* http_server_thread(void *port)
+void* http_server_thread(p_xt_http http)
 {
     DBG("running...");
 
-    int listen_sock = http_server_create_listen_socket((int)port);
+    int listen_sock = http_server_create_listen_socket(http->port);
 
     if (listen_sock <= 0)
     {
@@ -292,12 +287,15 @@ void* http_server_thread(void *port)
         return NULL;
     }
 
-    while (true)
+    http->listen_sock = listen_sock;
+
+    while (http->run)
     {
-        http_server_wait_client_connect(listen_sock);
+        http_server_wait_client_connect(http);
     }
 
     shutdown(listen_sock, 0);
+
     close(listen_sock);
 
     DBG("exit");
@@ -306,21 +304,25 @@ void* http_server_thread(void *port)
 
 /**
  * \brief      初始化http
- * \param[in]  port         端口号
- * \return     0            成功
+ * \param[in]   http    http服务数据,需要port, proc
+ * \return      0       成功
  */
-int http_init(int port, HTTP_PROCESS proc)
+int http_init(p_xt_http http)
 {
+    if (NULL == http)
+    {
+        return -1;
+    }
+
     pthread_t tid;
-    int ret = pthread_create(&tid, NULL, http_server_thread, (void*)port);
+
+    int ret = pthread_create(&tid, NULL, http_server_thread, http);
 
     if (ret != 0)
     {
         ERR("create thread fail, err:%d\n", ret);
-        return -1;
+        return -2;
     }
-
-    g_http_process = proc;
 
     DBG("ok");
     return 0;

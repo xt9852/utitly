@@ -19,7 +19,7 @@
  *\param[in]    list    链表
  *\return       0       成功
  */
-int list_init(p_list list)
+int list_init(p_xt_list list)
 {
     if (NULL == list)
     {
@@ -44,7 +44,7 @@ int list_init(p_list list)
  *\param[in]    list    链表
  *\return       0       成功
  */
-int list_uninit(p_list list)
+int list_uninit(p_xt_list list)
 {
     if (NULL == list)
     {
@@ -67,7 +67,7 @@ int list_uninit(p_list list)
  *\param[in]    data    数据
  *\return       0       成功
  */
-int list_tail_push(p_list list, void *data)
+int list_tail_push(p_xt_list list, void *data)
 {
     if (NULL == list)
     {
@@ -137,7 +137,7 @@ int list_tail_push(p_list list, void *data)
  *\param[out]   data    数据
  *\return       0       成功
  */
-int list_head_pop(p_list list, void **data)
+int list_head_pop(p_xt_list list, void **data)
 {
     if (NULL == list || NULL == data)
     {
@@ -184,7 +184,7 @@ int list_head_pop(p_list list, void **data)
                 1       无节点\n
                 其它    失败
  */
-int list_proc(p_list list, LIST_PROC proc, void *param)
+int list_proc(p_xt_list list, LIST_PROC proc, void *param)
 {
     if (NULL == list || NULL == proc)
     {

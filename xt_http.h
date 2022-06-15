@@ -8,6 +8,7 @@
  */
 #ifndef _XT_HTTP_H_
 #define _XT_HTTP_H_
+#include "xt_log.h"
 
 /**
  * \brief       http回调函数
@@ -18,14 +19,28 @@
  * \param[out]  content_len 返回内容长度
  * \return      0           成功
  */
-typedef int (*HTTP_PROCESS)(const char *uri, const char *arg, int arg_count, char *content, int *content_len);
+typedef int (*XT_HTTP_PROCESS)(const char *uri, const char *arg, int arg_count, char *content, int *content_len);
 
+/// http服务
+typedef struct _xt_http
+{
+    bool run;
+
+    int listen_sock;
+
+    int client_sock;
+
+    unsigned short  port;
+
+    XT_HTTP_PROCESS proc;
+
+} xt_http, *p_xt_http;
 
 /**
  * \brief       初始化http
- * \param[in]   port    端口号
+ * \param[in]   http    http服务服务数据,需要port, proc
  * \return      0       成功
  */
-int http_init(int port, HTTP_PROCESS proc);
+int http_init(p_xt_http http);
 
 #endif

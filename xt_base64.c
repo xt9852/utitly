@@ -9,77 +9,38 @@
 #include "xt_base64.h"
 #include "xt_log.h"
 
-#ifndef NULL
-#define NULL 0
-#endif
-
 /// base64字符
-const static char BASE64_STRING[64] =
+const static char BASE64_STRING[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/// 转成base64,输入3*8=24bit,输出4*6=24bit,内存排列为,o1 o0 o3 o2 o5 o4,o2+o3组成6bit,o2+o5组成6bit
+typedef struct _xt_base64_to
 {
-	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', //   0 -   9
-	'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', //  10 -  19
-	'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', //  20 -  29
-	'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', //  30 -  39
-	'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', //  40 -  49
-	'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', //  50 -  59
-	'8', '9', '+', '/'								  //  60 -  63
-};
+    unsigned char o0 : 2;
+    unsigned char o1 : 6;
+    unsigned char o2 : 4;
+    unsigned char o3 : 4;
+    unsigned char o4 : 6;
+    unsigned char o5 : 2;
 
-/// 转成base64输入
-struct to_base64i
+} *p_xt_base64_to;
+
+/// 从base64转回,输入4*6=24bit,输出3*8=24bit,内存排列为,o1 o0 o4 o3 o2 o7 o6 o5 o9 o8,o0+o3组成8bit,o2+o6组成8bit,o5+o8组成8bit
+typedef struct _xt_base64_from
 {
-	unsigned char i[3];
-};
+    unsigned char o0 : 6;
+    unsigned char o1 : 2;
+    unsigned char o2 : 4;
+    unsigned char o3 : 2;
+    unsigned char o4 : 2;
+    unsigned char o5 : 2;
+    unsigned char o6 : 4;
+    unsigned char o7 : 2;
+    unsigned char o8 : 6;
+    unsigned char o9 : 2;
 
-/// 转成base64输出
-struct to_base64o
-{
-	unsigned char o0 : 2;   ///< 2bit
-	unsigned char o1 : 6;
-	unsigned char o2 : 4;
-	unsigned char o3 : 4;
-	unsigned char o4 : 6;
-	unsigned char o5 : 2;
-};
+} *p_xt_base64_from;
 
-/// 转成base64
-typedef union
-{
-	struct to_base64i i;    ///< 输入
-	struct to_base64o o;    ///< 输出
-
-}to_base64;
-
-/// 从base64转回输入
-struct from_base64i
-{
-	unsigned char i[4];
-};
-
-/// 从base64转回输出
-struct from_base64o
-{
-	unsigned char o0 : 6;   ///< 6bit
-	unsigned char o1 : 2;
-	unsigned char o2 : 4;
-	unsigned char o3 : 2;
-	unsigned char o4 : 2;
-	unsigned char o5 : 2;
-	unsigned char o6 : 4;
-	unsigned char o7 : 2;
-	unsigned char o8 : 6;
-	unsigned char o9 : 2;
-};
-
-/// 从base64转回
-typedef union
-{
-	struct from_base64i i;  ///< 输入
-	struct from_base64o o;  ///< 输出
-
-}from_base64;
-
-unsigned char to(struct to_base64o *o, int i)
+unsigned char to(p_xt_base64_to o, int i)
 {
 	switch(i)
 	{
@@ -92,7 +53,7 @@ unsigned char to(struct to_base64o *o, int i)
 	return 0;
 }
 
-unsigned char from(struct from_base64o *o, int i)
+unsigned char from(p_xt_base64_from o, int i)
 {
 	switch(i)
 	{
@@ -134,24 +95,24 @@ int base64_to(const char *data, int data_len, char *base64, int *base_len)
         return -2;
     }
 
-	to_base64 *item = (to_base64*)data;
+	p_xt_base64_to item = (p_xt_base64_to)data;
 
 	for (int i = 0; i < times; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			base64[i * 4 + j] = BASE64_STRING[to(&(item->o), j)];
+			base64[i * 4 + j] = BASE64_STRING[to(item, j)];
 		}
 
 		item++;
 	}
 
-	to_base64 tail = {0};
+	struct _xt_base64_to tail = {0};
 	memcpy(&tail, &data[pos_end_data], remain);
 
 	for (int i = 0; i < remain + 1; i++)    // 因为1个字节变成base64时大于1位所以加1
 	{
-		base64[pos_end_base64 + i] = BASE64_STRING[to(&(tail.o), i)];
+		base64[pos_end_base64 + i] = BASE64_STRING[to(&tail, i)];
 	}
 
 	for (int i = 0; i < padding; i++)
@@ -180,71 +141,58 @@ int base64_from(const char *base64, int base64_len, char *data, int *data_len)
         return -1;
     }
 
-    int j = 0;
-    int completion = 0;
-    char *input = (char*)malloc(base64_len);
+    int count = 0;
+    int padding = 0;
+    char *buff = (char*)malloc(base64_len);
 
-    for (int i = 0; i < base64_len; i++)
-    {
-        if (0x0a == base64[i])  // 删除回车
-        {
-            continue;
-        }
-        else
-        {
-            input[j++] = base64[i];
-        }
-    }
-
-    base64_len = j;
-
+    // 将字符串转成6bit
 	for (int i = 0; i < base64_len; i++)
 	{
 		if ((base64[i] >= 'A') && (base64[i] <= 'Z'))
 		{
-			input[i] -= 'A';
+			buff[count++] = base64[i] - 'A';
 		}
 		else if ((base64[i] >= 'a') && (base64[i] <= 'z'))
 		{
-			input[i] -= 71;
+			buff[count++] = base64[i] - 71;
 		}
 		else if ((base64[i] >= '0') && (base64[i] <= '9'))
 		{
-			input[i] += 4;
+			buff[count++] = base64[i] + 4;
 		}
 		else if (base64[i] == '+')
 		{
-			input[i] = 62;
+			buff[count++] = 62;
 		}
 		else if (base64[i] == '/')
 		{
-			input[i] = 63;
+			buff[count++] = 63;
 		}
-		else if (base64[i] == 0x3d) // '='
+		else if (base64[i] == '=')
 		{
-			input[i] = 0;
-            completion++;
+            padding++;
+			buff[count++] = 0;
 		}
 	}
 
-	int times = base64_len / 4;
-	from_base64 *item = (from_base64*)input;
+	int times = count / 4;
+	p_xt_base64_from item = (p_xt_base64_from)buff;
 
 	for (int i = 0; i < times; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			data[i*3 + j] = from(&(item->o), j);
+			data[i*3 + j] = from(item, j);
 		}
 
 		item++;
 	}
 
-    free(input);
+    free(buff);
 
-    *data_len = times * 3 - completion;
+    *data_len = times * 3 - padding;
     data[*data_len] = '\0';
 
-    DBG("times:%d completion:%d len:%d", times, completion, *data_len);
+    DBG("times:%d padding:%d len:%d", times, padding, *data_len);
 	return 0;
 }

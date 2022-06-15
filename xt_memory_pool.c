@@ -16,7 +16,7 @@
  *\param[in]    count   初始内存块数量,要大于1,后续每次增加其一半
  *\return       0       成功
  */
-int memory_pool_init(p_memory_pool pool, int size, int count)
+int memory_pool_init(p_xt_memory_pool pool, int size, int count)
 {
     if (NULL == pool || size <= 0 || count <= 1)
     {
@@ -54,7 +54,7 @@ int LIST_DEL_MEM(void *mem, void *param)
  *\param[in]    pool    池
  *\return       0       成功
  */
-int memory_pool_uninit(p_memory_pool pool)
+int memory_pool_uninit(p_xt_memory_pool pool)
 {
     if (NULL == pool)
     {
@@ -78,7 +78,7 @@ int memory_pool_uninit(p_memory_pool pool)
  *\param[in]    mem     内存块
  *\return       0       成功
  */
-int memory_pool_get(p_memory_pool pool, void **mem)
+int memory_pool_get(p_xt_memory_pool pool, void **mem)
 {
     if (NULL == pool || NULL == mem)
     {
@@ -110,7 +110,7 @@ int memory_pool_get(p_memory_pool pool, void **mem)
  *\param[in]    mem     内存块
  *\return       0       成功
  */
-int memory_pool_put(p_memory_pool pool, void *mem)
+int memory_pool_put(p_xt_memory_pool pool, void *mem)
 {
     if (NULL == pool || NULL == mem)
     {

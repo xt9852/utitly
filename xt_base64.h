@@ -25,9 +25,7 @@ int base64_to(const char *data, int data_len, char *base64, int *base_len);
  *\param[in]  base64_len    BASE64字符串数据长度
  *\param[out] data          输出数据缓冲
  *\param[out] data          输出数据缓冲区大小
- *\return     0             成功\n
-              <0            失败\n
-              >0            原数据长
+ *\return     0             成功
  */
 int base64_from(const char *base64, int base64_len, char *data, int *data_len);
 

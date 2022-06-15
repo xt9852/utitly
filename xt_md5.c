@@ -143,7 +143,7 @@ const char *MD5_STRING = "0123456789ABCDEF";
  *\param[out]   md5         MD5数据
  *\return       0           成功
  */
-int md5_get(const char *data, int data_len, p_md5_info md5)
+int md5_get(const char *data, int data_len, p_xt_md5 md5)
 {
     if (NULL == data || data_len <= 0 || NULL == md5)
     {
@@ -196,30 +196,35 @@ int md5_get(const char *data, int data_len, p_md5_info md5)
  *\brief        得到MD5字符串
  *\param[in]    data        数据
  *\param[in]    data_len    数据长度
- *\param[out]   md5         MD5字符串,大写字母
+ *\param[out]   md5_str     MD5字符串,大写字母
  *\return       0           成功
  */
-int md5_get_str(const char *data, int data_len, char *md5)
+int md5_get_str(const char *data, int data_len, char *md5_str)
 {
-    md5_info md5_data;
+    if (NULL == data || data_len <= 0 || NULL == md5_str)
+    {
+        return -1;
+    }
 
-    int ret = md5_get(data, data_len, &md5_data);
+    xt_md5 md5;
+
+    int ret = md5_get(data, data_len, &md5);
 
     if (0 != ret)
     {
         return ret;
     }
 
-    unsigned char *ptr = (char*)&md5_data;
+    unsigned char *p = (char*)&md5;
 
-    DBG("A:%x B:%x C:%x D:%x", md5_data.A, md5_data.B, md5_data.C, md5_data.D);
+    DBG("A:%x B:%x C:%x D:%x", md5.A, md5.B, md5.C, md5.D);
 
     for (int i = 0; i < 16; i++)
     {
-        md5[2 * i]     = MD5_STRING[ptr[i] >> 4];
-        md5[2 * i + 1] = MD5_STRING[ptr[i] & 0x0F];
+        md5_str[2 * i]     = MD5_STRING[p[i] >> 4];
+        md5_str[2 * i + 1] = MD5_STRING[p[i] & 0x0F];
     }
 
-    md5[32] = '\0';
+    md5_str[32] = '\0';
     return 0;
 }
