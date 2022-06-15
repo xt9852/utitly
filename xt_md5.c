@@ -1,6 +1,6 @@
 /**
  *\copyright    XT Tech. Co., Ltd.
- *\file         xt_md5.h
+ *\file         xt_md5.c
  *\author       xt
  *\version      1.0.0
  *\date         2022.02.08
@@ -59,7 +59,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
 #define II(a, b, c, d, x, s, ac) { (a) += I((b), (c), (d)) + (x) + (unsigned int)(ac); (a) = ROTATE_LEFT((a), (s)); (a) += (b); }
 
 /// 第一轮
-#define P1 FF(a, b, c, d, x[ 0],  7, 0xd76aa478);\
+#define R1 FF(a, b, c, d, x[ 0],  7, 0xd76aa478);\
            FF(d, a, b, c, x[ 1], 12, 0xe8c7b756);\
            FF(c, d, a, b, x[ 2], 17, 0x242070db);\
            FF(b, c, d, a, x[ 3], 22, 0xc1bdceee);\
@@ -77,7 +77,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
            FF(b, c, d, a, x[15], 22, 0x49b40821);
 
 /// 第二轮
-#define P2 GG(a, b, c, d, x[ 1],  5, 0xf61e2562);\
+#define R2 GG(a, b, c, d, x[ 1],  5, 0xf61e2562);\
            GG(d, a, b, c, x[ 6],  9, 0xc040b340);\
            GG(c, d, a, b, x[11], 14, 0x265e5a51);\
            GG(b, c, d, a, x[ 0], 20, 0xe9b6c7aa);\
@@ -95,7 +95,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
            GG(b, c, d, a, x[12], 20, 0x8d2a4c8a);
 
 /// 第三轮
-#define P3 HH(a, b, c, d, x[ 5],  4, 0xfffa3942);\
+#define R3 HH(a, b, c, d, x[ 5],  4, 0xfffa3942);\
            HH(d, a, b, c, x[ 8], 11, 0x8771f681);\
            HH(c, d, a, b, x[11], 16, 0x6d9d6122);\
            HH(b, c, d, a, x[14], 23, 0xfde5380c);\
@@ -113,7 +113,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
            HH(b, c, d, a, x[ 2], 23, 0xc4ac5665);
 
 /// 第四轮
-#define P4 II(a, b, c, d, x[ 0],  6, 0xf4292244);\
+#define R4 II(a, b, c, d, x[ 0],  6, 0xf4292244);\
            II(d, a, b, c, x[ 7], 10, 0x432aff97);\
            II(c, d, a, b, x[14], 15, 0xab9423a7);\
            II(b, c, d, a, x[ 5], 21, 0xfc93a039);\
@@ -131,7 +131,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
            II(b, c, d, a, x[ 9], 21, 0xeb86d391);
 
 /// 主处理
-#define PROCESS(X) x=X; a = A; b = B; c = C; d = D; P1; P2; P3; P4; A += a; B += b; C += c; D += d;
+#define P(X) x=X; a = A; b = B; c = C; d = D; R1; R2; R3; R4; A += a; B += b; C += c; D += d;
 
 /// MD5字符串
 const char *MD5_STRING = "0123456789ABCDEF";
@@ -170,7 +170,7 @@ int md5_get(const char *data, int data_len, p_md5_info md5)
 
     for (unsigned int i = 0; i < times; i++)
     {
-        PROCESS((unsigned int *)&data[i * 64]);
+        P((unsigned int *)&data[i * 64]);
     }
 
     memcpy(buff, &data[times * 64], remain);    // 剩余数据
@@ -178,11 +178,11 @@ int md5_get(const char *data, int data_len, p_md5_info md5)
     memset(&buff[remain + 1], 0, padding);      // 补齐0
     memcpy(&buff[count_pos], &bit_count, 8);    // 数据比特长
 
-    PROCESS((unsigned int *)buff);
+    P((unsigned int *)buff);
 
     if (remain > 55)
     {
-        PROCESS((unsigned int *)(buff + 64));
+        P((unsigned int *)(buff + 64));
     }
 
     md5->A = A;
