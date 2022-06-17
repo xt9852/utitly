@@ -94,9 +94,9 @@ extern xt_log g_log;                ///< 全局日志指针
 int log_init(p_xt_log log);
 
 /**
- * \brief       反初始化日志
+ *\brief        反初始化日志
  *\param[in]    log         日志数据
- * \return      无
+ *\return       无
  */
 void log_uninit(p_xt_log log);
 

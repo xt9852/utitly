@@ -12,7 +12,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
-//#include <errno.h>
 #include <pthread.h>
 
 #ifdef _WINDOWS

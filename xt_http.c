@@ -13,50 +13,89 @@
 #include "xt_http.h"
 
 #define NETWORK_IPV4
-#define HTTP_HEAD_200   "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: "
-#define HTTP_HEAD_404   "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: "
+
+#define ARG_SIZE        128
+
+#define HTTP_HEAD       "HTTP/1.1 %s\nContent-Type: %s\nContent-Length: %d\n\n"
+
 #define HTTP_FILE_404   "404"
 
-/**
- * \brief      得到URI中的参数,/cpu-data?clk=1 HTTP/1.1
- * \param[in]  uri  URI地址
-  * \return         URI中参数指针
- */
-char* http_get_arg(char *uri)
-{
-    char *ch = strchr(uri, ' ');
+const static char *g_http_code[] = {
+    "200 OK",
+    "404 Not Found"
+};
 
-    if (NULL == ch)
+const static char *g_http_type[] = {
+    "text/html",
+    "image/x-icon"
+};
+
+
+/**
+ *\brief        得到URI中的参数,/index.html?arg1=1&arg2=2 HTTP/1.1
+ *\param[in]    uri         URI地址
+ *\param[out]   arg_name    URI的参数名称
+ *\param[out]   arg_data    URI的参数数据
+ *\param[out]   arg_count   URI的参数数量
+ *\return       0           成功
+ */
+int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
+{
+    char *end = strchr(uri, ' ');
+
+    if (NULL == end)
     {
         ERR("request uri:%s error", uri);
-        return NULL;
+        return -1;
     }
 
-    *ch = '\0';
+    *end = '\0';
 
-    DBG("uri:%s", uri);
+    char *beg = strchr(uri, '?');
 
-    ch = strchr(uri, '?');
-
-    if (NULL != ch)
+    if (NULL == beg)
     {
-        *ch++ = '\0';
-        DBG("arg:%s", ch);
-        return ch;
+        *arg_count = 0;
+        return 0;
     }
 
-    return NULL;
+    *beg++ = '\0';
+
+    int i;
+
+    char *token = strtok_s(beg, "&", &beg);// 后移一位到参数
+
+    for (i = 0; NULL != token; i++)
+    {
+        arg_name[i] = token;
+
+        char *equ = strchr(token, '=');
+
+        if (NULL == equ)
+        {
+            arg_data[i] = "";
+        }
+        else
+        {
+            *equ++ = '\0';
+            arg_data[i] = equ;
+        }
+
+        DBG("arg[%d]:%s:%s", i, arg_name[i], arg_data[i]);
+        token = strtok_s(NULL, "&", &beg);
+    }
+
+    *arg_count = i;
+    return 0;
 }
 
 /**
- * \brief      处理客户端的请求
- * \param[in]  http         http服务数据
- * \return     0            成功
+ *\brief       处理客户端的请求
+ *\param[in]   http         http服务数据
+ *\return      0            成功
  */
 int http_client_request(p_xt_http http, char *buff, int buff_size)
 {
-    DBG("----------------------beg----client_sock:%d", http->client_sock);
-
     int client_sock = http->client_sock;
 
     int data_len = recv(client_sock, buff, buff_size, 0);
@@ -71,67 +110,57 @@ int http_client_request(p_xt_http http, char *buff, int buff_size)
         ERR("connection closed");
         return -2;
     }
-    else
+
+    buff[data_len] = 0;
+
+    DBG("client_sock:%d recv:%d\n%s", client_sock, data_len, buff);
+
+    if (0 != strncmp(buff, "GET", 3))
     {
-        DBG("sock %d recv data len:%d", client_sock, data_len);
-
-        buff[data_len] = 0;
-
-        if (0 != strncmp(buff, "GET ", 4))
-        {
-            ERR("request is not GET");
-            return 1;
-        }
-
-        DBG("\n%s", buff);
-
-        char *uri = buff + 4;
-        char *arg = http_get_arg(uri);
-        char *head;
-        char *content = buff;
-        int   head_len;
-        int   content_len = buff_size;
-
-        int ret = http->proc(uri, arg, 1, content, &content_len);
-
-        if (ret == 200)
-        {
-            head = HTTP_HEAD_200;
-            head_len = sizeof(HTTP_HEAD_200) - 1;
-        }
-        else
-        {
-            head = HTTP_HEAD_404;
-            content = HTTP_FILE_404;
-            head_len = sizeof(HTTP_HEAD_404) - 1;
-            content_len = sizeof(HTTP_FILE_404) - 1;
-        }
-
-        DBG("head len:%d content len:%d", head_len, content_len);
-
-        char content_len_str[16];
-        sprintf_s(content_len_str, sizeof(content_len_str), "%d\n\n", content_len);     // 内容长度,加2个\n
-
-        ret = send(client_sock, head, head_len, 0);                                     // 发送头部
-        DBG("send head len:%d", ret);
-
-        ret = send(client_sock, content_len_str, strlen(content_len_str), 0);           // 发送内容长度
-        DBG("send content_len len:%d", ret - 2);
-
-        ret = send(client_sock, content, content_len, 0);                               // 发送内容
-        DBG("send content len:%d", ret);
-
-        DBG("\n%s%s", head, content_len_str);
+        ERR("request is not GET");
+        return 1;
     }
 
-    DBG("----------------------end----");
+    char *arg_name[ARG_SIZE];
+    char *arg_data[ARG_SIZE];
+    char *uri           = buff + 4;
+    char *content       = buff;
+    int   arg_count     = ARG_SIZE;
+    int   content_len   = buff_size;
+    int   content_type  = HTTP_TYPE_HTML;
+
+    int ret = http_get_arg(uri, arg_name, arg_data, &arg_count);
+
+    if (0 == ret)
+    {
+        ret = http->proc(uri, arg_name, arg_data, arg_count, &content_type, content, &content_len);
+    }
+
+    if (ret != 0)
+    {
+        ret = 1;
+        content = HTTP_FILE_404;
+        content_type = HTTP_TYPE_HTML;
+        content_len = sizeof(HTTP_FILE_404) - 1;
+    }
+
+    char head[128];
+    ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[content_type], content_len);
+
+    ret = send(client_sock, head, ret, 0);              // 发送头部
+    DBG("send head len:%d", ret);
+
+    ret = send(client_sock, content, content_len, 0);   // 发送内容
+    DBG("send content len:%d", ret);
+
+    DBG("\n%s", head);
     return 0;
 }
 
 /**
- * \brief      客户端处理函数
- * \param[in]  http         http服务数据
- * \return                  空
+ *\brief       客户端处理函数
+ *\param[in]   http         http服务数据
+ *\return                   空
  */
 void* http_client_thread(p_xt_http http)
 {
@@ -153,9 +182,9 @@ void* http_client_thread(p_xt_http http)
 }
 
 /**
- * \brief      处理客户端的连接
- * \param[in]  http         http服务数据
- * \return     0            成功
+ *\brief       处理客户端的连接
+ *\param[in]   http         http服务数据
+ *\return      0            成功
  */
 int http_server_wait_client_connect(p_xt_http http)
 {
@@ -204,9 +233,9 @@ int http_server_wait_client_connect(p_xt_http http)
 }
 
 /**
- * \brief      创建监听socket
- * \param[in]  port         端口
- * \return     0            成功
+ *\brief       创建监听socket
+ *\param[in]   port         端口
+ *\return      0            成功
  */
 int http_server_create_listen_socket(unsigned short port)
 {
@@ -270,9 +299,9 @@ int http_server_create_listen_socket(unsigned short port)
 }
 
 /**
- * \brief      HTTP服务主线程
- * \param[in]  http         http服务数据
- * \return                  空
+ *\brief       HTTP服务主线程
+ *\param[in]   http         http服务数据
+ *\return                   空
  */
 void* http_server_thread(p_xt_http http)
 {
@@ -303,9 +332,9 @@ void* http_server_thread(p_xt_http http)
 }
 
 /**
- * \brief      初始化http
- * \param[in]   http    http服务数据,需要port, proc
- * \return      0       成功
+ *\brief       初始化http
+ *\param[in]    http    http服务数据,需要port, proc
+ *\return       0       成功
  */
 int http_init(p_xt_http http)
 {
