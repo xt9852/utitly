@@ -37,8 +37,6 @@ typedef struct _xt_http
 
     int listen_sock;
 
-    int client_sock;
-
     unsigned short  port;
 
     XT_HTTP_PROCESS proc;

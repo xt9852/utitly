@@ -20,6 +20,13 @@
 
 #define HTTP_FILE_404   "404"
 
+typedef struct _client_thread_param
+{
+    int client_sock;
+    p_xt_http http;
+
+} client_thread_param, *p_client_thread_param;
+
 const static char *g_http_code[] = {
     "200 OK",
     "404 Not Found"
@@ -92,12 +99,13 @@ int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
 /**
  *\brief       处理客户端的请求
  *\param[in]   http         http服务数据
+ *\param[in]   client_sock  客户端socket
+ *\param[in]   buff         数据缓冲区
+ *\param[in]   buff_size    数据缓冲区大小
  *\return      0            成功
  */
-int http_client_request(p_xt_http http, char *buff, int buff_size)
+int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_size)
 {
-    int client_sock = http->client_sock;
-
     int data_len = recv(client_sock, buff, buff_size, 0);
 
     if (data_len < 0)
@@ -107,13 +115,11 @@ int http_client_request(p_xt_http http, char *buff, int buff_size)
     }
     else if (data_len == 0) // Connection closed
     {
-        ERR("connection closed");
+        DBG("connection closed");
         return -2;
     }
 
     buff[data_len] = 0;
-
-    DBG("client_sock:%d recv:%d\n%s", client_sock, data_len, buff);
 
     if (0 != strncmp(buff, "GET", 3))
     {
@@ -130,6 +136,8 @@ int http_client_request(p_xt_http http, char *buff, int buff_size)
     int   content_type  = HTTP_TYPE_HTML;
 
     int ret = http_get_arg(uri, arg_name, arg_data, &arg_count);
+
+    DBG("s%d r%d i%s", client_sock, data_len, uri);
 
     if (0 == ret)
     {
@@ -153,29 +161,32 @@ int http_client_request(p_xt_http http, char *buff, int buff_size)
     ret = send(client_sock, content, content_len, 0);   // 发送内容
     DBG("send content len:%d", ret);
 
-    DBG("\n%s", head);
+    //DBG("\n%s", head);
     return 0;
 }
 
 /**
  *\brief       客户端处理函数
- *\param[in]   http         http服务数据
+ *\param[in]   param        客户端socket和http服务数据
  *\return                   空
  */
-void* http_client_thread(p_xt_http http)
+void* http_client_thread(p_client_thread_param param)
 {
     DBG("running...");
 
-    int client_sock = http->client_sock;
-    int buff_size = 1024*100;
+    int client_sock = param->client_sock;
+    int buff_size = 10*1024*1024;
     char *buff = malloc(buff_size);
 
-    while (http_client_request(http, buff, buff_size) >= 0);
+    while (http_client_request(param->http, client_sock, buff, buff_size) >= 0);
 
     DBG("close client socket %d", client_sock);
+
     shutdown(client_sock, 0);
     close(client_sock);
+
     free(buff);
+    free(param);
 
     DBG("exit");
     return NULL;
@@ -206,7 +217,9 @@ int http_server_wait_client_connect(p_xt_http http)
         return -1;
     }
 
-    http->client_sock = client_sock;
+    p_client_thread_param param = (p_client_thread_param)malloc(sizeof(client_thread_param));
+    param->client_sock = client_sock;
+    param->http = http;
 
     char addr_str[64];
 
@@ -220,7 +233,7 @@ int http_server_wait_client_connect(p_xt_http http)
 
     pthread_t tid;
 
-    int ret = pthread_create(&tid, NULL, http_client_thread, http);
+    int ret = pthread_create(&tid, NULL, http_client_thread, param);
 
     if (ret != 0)
     {
