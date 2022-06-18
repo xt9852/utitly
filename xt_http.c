@@ -37,9 +37,73 @@ const static char *g_http_type[] = {
     "image/x-icon"
 };
 
+/**
+ *\brief        十六进制字符转数字
+ *\param[in]    ch          十六进制字符
+ *\return                   数字
+ */
+char http_to_hex(char ch)
+{
+    if (ch >= '0' && ch <= '9')
+    {
+        return ch - '0';
+    }
+    else if (ch >= 'A' && ch <= 'F')
+    {
+        return ch - 'A' + 10;
+    }
+    else
+    {
+        ERR("ch:0x%02x", ch);
+        return 0;
+    }
+}
 
 /**
- *\brief        得到URI中的参数,/index.html?arg1=1&arg2=2 HTTP/1.1
+ *\brief        转成参数,%3A%2F%2F
+ *\param[out]   arg         转成参数
+ *\return       0           成功
+ */
+int http_proc_arg(char *arg)
+{
+    int   pos = 0;
+    int   len = 0;
+    char *beg = arg;
+
+    char *token = strtok_s(beg, "%", &beg);
+
+    for (int i = 0; NULL != token; i++)
+    {
+        DBG("------%d:%s", i, token);
+
+        if (0 == i)
+        {
+            pos = len = strlen(token);
+            strcpy_s(arg, len + 1, token);
+
+            DBG("pos:0 len:%d arg:%s", len, arg);
+        }
+        else
+        {
+            arg[pos++] = http_to_hex(token[0]) * 16 + http_to_hex(token[1]);
+
+            len = strlen(token) - 2;
+
+            strcpy_s(arg + pos, len + 1, token + 2);
+
+            DBG("pos:%d len:%d arg:%s", pos, len, arg);
+
+            pos += len;
+        }
+
+        token = strtok_s(NULL, "%", &beg);
+    }
+
+    return 0;
+}
+
+/**
+ *\brief        得到URI中的参数,/index.html?arg1=1&arg2=2
  *\param[in]    uri         URI地址
  *\param[out]   arg_name    URI的参数名称
  *\param[out]   arg_data    URI的参数数据
@@ -48,16 +112,6 @@ const static char *g_http_type[] = {
  */
 int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
 {
-    char *end = strchr(uri, ' ');
-
-    if (NULL == end)
-    {
-        ERR("request uri:%s error", uri);
-        return -1;
-    }
-
-    *end = '\0';
-
     char *beg = strchr(uri, '?');
 
     if (NULL == beg)
@@ -66,11 +120,11 @@ int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
         return 0;
     }
 
-    *beg++ = '\0';
+    *beg++ = '\0';  // 后移一位到参数
 
     int i;
 
-    char *token = strtok_s(beg, "&", &beg);// 后移一位到参数
+    char *token = strtok_s(beg, "&", &beg);
 
     for (i = 0; NULL != token; i++)
     {
@@ -88,11 +142,35 @@ int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
             arg_data[i] = equ;
         }
 
+        http_proc_arg(arg_data[i]);
+
         DBG("arg[%d]:%s:%s", i, arg_name[i], arg_data[i]);
         token = strtok_s(NULL, "&", &beg);
     }
 
     *arg_count = i;
+    return 0;
+}
+
+/**
+ *\brief        得到URI
+ *\param[in]    buff        数据包
+ *\param[out]   uri         URI地址
+ *\param[in]    uri         URI地址缓冲区大小
+ *\return       0           成功
+ */
+int http_get_uri(const char *buff, char *uri, int uri_size)
+{
+    char *end = strchr(buff + 4, ' ');
+
+    if (NULL == end)
+    {
+        ERR("request uri:%s error", uri);
+        return -1;
+    }
+
+    strncpy_s(uri, uri_size, buff + 4, end - buff - 4);
+
     return 0;
 }
 
@@ -127,15 +205,22 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
         return 1;
     }
 
+    char  uri[1024];
     char *arg_name[ARG_SIZE];
     char *arg_data[ARG_SIZE];
-    char *uri           = buff + 4;
     char *content       = buff;
     int   arg_count     = ARG_SIZE;
     int   content_len   = buff_size;
     int   content_type  = HTTP_TYPE_HTML;
 
-    int ret = http_get_arg(uri, arg_name, arg_data, &arg_count);
+    int ret = http_get_uri(buff, uri, sizeof(uri));
+
+    if (0 != ret)
+    {
+        return -3;
+    }
+
+    ret = http_get_arg(uri, arg_name, arg_data, &arg_count);
 
     DBG("s%d r%d i%s", client_sock, data_len, uri);
 
