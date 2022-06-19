@@ -74,14 +74,10 @@ int http_proc_arg(char *arg)
 
     for (int i = 0; NULL != token; i++)
     {
-        DBG("------%d:%s", i, token);
-
         if (0 == i)
         {
             pos = len = strlen(token);
             strcpy_s(arg, len + 1, token);
-
-            DBG("pos:0 len:%d arg:%s", len, arg);
         }
         else
         {
@@ -90,8 +86,6 @@ int http_proc_arg(char *arg)
             len = strlen(token) - 2;
 
             strcpy_s(arg + pos, len + 1, token + 2);
-
-            DBG("pos:%d len:%d arg:%s", pos, len, arg);
 
             pos += len;
         }
@@ -144,7 +138,7 @@ int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
 
         http_proc_arg(arg_data[i]);
 
-        DBG("arg[%d]:%s:%s", i, arg_name[i], arg_data[i]);
+        DBG("arg[%d] name:%s data:%s", i, arg_name[i], arg_data[i]);
         token = strtok_s(NULL, "&", &beg);
     }
 
