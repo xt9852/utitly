@@ -15,9 +15,6 @@
 /// 使用IPV4
 #define NETWORK_IPV4
 
-/// 参数数量
-#define ARG_SIZE        128
-
 /// 请求头
 #define HTTP_HEAD       "HTTP/1.1 %s\nContent-Type: %s\nContent-Length: %d\n\n"
 
@@ -35,7 +32,7 @@ typedef struct _client_thread_param
 
 const static char *g_http_code[] = { "200 OK", "404 Not Found" };   ///< 状态码
 
-const static char *g_http_type[] = { "text/html", "image/x-icon" }; ///< 页面类型
+const static char *g_http_type[] = { "text/html", "image/x-icon", "image/gif", "image/png", "image/jpg", "image/jpeg" }; ///< 页面类型
 
 /**
  *\brief        十六进制字符转数字
@@ -55,7 +52,7 @@ char http_to_hex(char ch)
     else
     {
         ERR("ch:0x%02x", ch);
-        return 0;
+        return -1;
     }
 }
 
@@ -69,6 +66,7 @@ int http_proc_arg(char *arg)
     int   pos = 0;
     int   len = 0;
     char *beg = arg;
+    char  hex[2];
 
     char *token = strtok_s(beg, "%", &beg);
 
@@ -81,7 +79,21 @@ int http_proc_arg(char *arg)
         }
         else
         {
-            arg[pos++] = http_to_hex(token[0]) * 16 + http_to_hex(token[1]);
+            hex[0] = http_to_hex(token[0]);
+
+            if (hex[0] < 0)
+            {
+                return -1;
+            }
+
+            hex[1] = http_to_hex(token[1]);
+
+            if (hex[1] < 0)
+            {
+                return -2;
+            }
+
+            arg[pos++] = hex[0] * 16 + hex[1];
 
             len = strlen(token) - 2;
 
@@ -99,50 +111,54 @@ int http_proc_arg(char *arg)
 /**
  *\brief        得到URI中的参数,/index.html?arg1=1&arg2=2
  *\param[in]    uri         URI地址
- *\param[out]   arg_name    URI的参数名称
- *\param[out]   arg_data    URI的参数数据
- *\param[out]   arg_count   URI的参数数量
+ *\param[out]   arg         URI的参数
  *\return       0           成功
  */
-int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
+int http_get_arg(char *uri, p_xt_http_arg arg)
 {
     char *beg = strchr(uri, '?');
 
     if (NULL == beg)
     {
-        *arg_count = 0;
+        arg->count = 0;
         return 0;
     }
 
     *beg++ = '\0';  // 后移一位到参数
 
     int i;
+    char *data;
 
     char *token = strtok_s(beg, "&", &beg);
 
     for (i = 0; NULL != token; i++)
     {
-        arg_name[i] = token;
+        arg->name[i] = token;
 
         char *equ = strchr(token, '=');
 
         if (NULL == equ)
         {
-            arg_data[i] = "";
+            data = "";
         }
         else
         {
             *equ++ = '\0';
-            arg_data[i] = equ;
+            data = equ;
         }
 
-        http_proc_arg(arg_data[i]);
+        if (http_proc_arg(data) != 0)
+        {
+            return -1;
+        }
 
-        DBG("arg[%d] name:%s data:%s", i, arg_name[i], arg_data[i]);
+        arg->data[i] = data;
+
+        DBG("arg[%d] name:%s data:%s", i, arg->name[i], data);
         token = strtok_s(NULL, "&", &beg);
     }
 
-    *arg_count = i;
+    arg->count = i;
     return 0;
 }
 
@@ -199,13 +215,9 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
         return 1;
     }
 
-    char  uri[1024];
-    char *arg_name[ARG_SIZE];
-    char *arg_data[ARG_SIZE];
-    char *content       = buff;
-    int   arg_count     = ARG_SIZE;
-    int   content_len   = buff_size;
-    int   content_type  = HTTP_TYPE_HTML;
+    char            uri[1024];
+    xt_http_arg     arg         = {0};
+    xt_http_content content     = {HTTP_TYPE_HTML, buff_size, buff};
 
     int ret = http_get_uri(buff, uri, sizeof(uri));
 
@@ -214,32 +226,34 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
         return -3;
     }
 
-    ret = http_get_arg(uri, arg_name, arg_data, &arg_count);
+    DBG("sock:%d recv:%d uri:%s", client_sock, data_len, uri);
 
-    DBG("s%d r%d i%s", client_sock, data_len, uri);
+    ret = http_get_arg(uri, &arg);
 
-    if (0 == ret)
+    if (0 != ret)
     {
-        DBG("call proc beg");
-        ret = http->proc(uri, arg_name, arg_data, arg_count, &content_type, content, &content_len);
-        DBG("call proc end");
+        return -4;
     }
 
-    if (ret != 0)
+    ret = http->proc(uri, &arg, &content);
+
+    DBG("call http callback end ret:%d", ret);
+
+    if (0 != ret)
     {
         ret = 1;
-        content = HTTP_FILE_404;
-        content_type = HTTP_TYPE_HTML;
-        content_len = sizeof(HTTP_FILE_404) - 1;
+        content.data = HTTP_FILE_404;
+        content.type = HTTP_TYPE_HTML;
+        content.len = sizeof(HTTP_FILE_404) - 1;
     }
 
     char head[128];
-    ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[content_type], content_len);
+    ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[content.type], content.len);
 
-    ret = send(client_sock, head, ret, 0);              // 发送头部
+    ret = send(client_sock, head, ret, 0);                  // 发送头部
     DBG("send head len:%d", ret);
 
-    ret = send(client_sock, content, content_len, 0);   // 发送内容
+    ret = send(client_sock, content.data, content.len, 0);  // 发送内容
     DBG("send content len:%d", ret);
 
     //DBG("\n%s", head);

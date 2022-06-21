@@ -146,26 +146,26 @@ int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_inf
     }
 
     // 窗体类
-    WNDCLASSA wc     = {0};
-    wc.lpfnWndProc   = notify_window_msg_callback;  // 窗体消息处理函数
-    wc.lpszClassName = "xt_sys_icon_class_name";    // 类名称
+    WNDCLASSW wc      = {0};
+    wc.lpfnWndProc   = notify_window_msg_callback;      // 窗体消息处理函数
+    wc.lpszClassName = L"xt_sys_icon_class_name";       // 类名称
 
-    if (0 == RegisterClassA(&wc))                   // 0-失败
+    if (0 == RegisterClassW(&wc))                       // 0-失败
     {
         MessageBoxA(NULL, "RegisterClass fail", "error", MB_OK);
         return -2;
     }
 
     // 创建窗体
-    HWND wnd = CreateWindowA(wc.lpszClassName,      // 类名称
-                         "title",                   // 窗体标题
-                         WS_OVERLAPPEDWINDOW,       // 窗体属性
-                         0, 0,                      // 窗体位置
-                         1, 1,                      // 窗体大小
-                         NULL,                      // 父窗句柄
-                         NULL,                      // 菜单句柄
-                         instance,                  // 实例句柄
-                         NULL);                     // 参数,给WM_CREATE的lParam
+    HWND wnd = CreateWindow(wc.lpszClassName,           // 类名称
+                         L"title",                      // 窗体标题
+                         WS_OVERLAPPEDWINDOW,           // 窗体属性
+                         0, 0,                          // 窗体位置
+                         0, 0,                          // 窗体大小
+                         NULL,                          // 父窗句柄
+                         NULL,                          // 菜单句柄
+                         instance,                      // 实例句柄
+                         NULL);                         // 参数,给WM_CREATE的lParam
 
     if (NULL == wnd)
     {
