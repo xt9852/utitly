@@ -8,9 +8,9 @@
  *\note         注解
  *\attention    注意
  *\warning      警告
- *\enum         enum_test   引用枚举
- *\class                    类
- *\exception                异常
+ *\class        类名称
+ *\exception    异常说明
+ *\example      doxygen_example.c doxygen注释实例
  */
 #include <stdio.h>
 
@@ -65,7 +65,7 @@ enum enum_test
 
 int   g_doxygen_1  = 0;             ///< 全局变量1
 
-char *g_doxygen_2  = NULL;          ///< 全局变量1
+char *g_doxygen_2  = NULL;          ///< 全局变量2
 
 /**
  *\brief        设置日志文件名
