@@ -30,10 +30,10 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
     H(X, Y ,Z) = X ^ Y ^ Z
     I(X, Y ,Z) = Y ^ (X | (~Z))
 
-    FF(a, b, c, d, Mj, s, ti) 为 a = b + ( (a + F(b,c,d) + Mj + ti) << s)
-    GG(a, b, c, d, Mj, s, ti) 为 a = b + ( (a + G(b,c,d) + Mj + ti) << s)
-    HH(a, b, c, d, Mj, s, ti) 为 a = b + ( (a + H(b,c,d) + Mj + ti) << s)
-    II(a, b, c, d, Mj, s, ti) 为 a = b + ( (a + I(b,c,d) + Mj + ti) << s)
+    FF(a, b, c, d, x, s, co) 为 a = b + ( (a + F(b,c,d) + x + co) << s)
+    GG(a, b, c, d, x, s, co) 为 a = b + ( (a + G(b,c,d) + x + co) << s)
+    HH(a, b, c, d, x, s, co) 为 a = b + ( (a + H(b,c,d) + x + co) << s)
+    II(a, b, c, d, x, s, co) 为 a = b + ( (a + I(b,c,d) + x + co) << s)
 
     常数ti是4294967296*abs(sin(i))的整数部分,i取值从1到64,单位是弧度
     常数s是移位位数, 第一轮: 7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22
@@ -43,20 +43,20 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
 
 */
 
-// 非线性函数,攻击者试图逆向MD5时需要解这个非线性函数F,但是解这个非线性函数F不能获得唯一解
+/// 非线性函数,攻击者试图逆向MD5时需要解这个非线性函数F,但是解这个非线性函数F不能获得唯一解
 #define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
 #define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
 #define H(x, y, z) ((x) ^ (y) ^ (z))
 #define I(x, y, z) ((y) ^ ((x) | (~z)))
 
-// 循环左移
+/// 循环左移
 #define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32-(n))))
 
-// 核心公式
-#define FF(a, b, c, d, x, s, ac) { (a) += F((b), (c), (d)) + (x) + (unsigned int)(ac); (a) = ROTATE_LEFT((a), (s)); (a) += (b); }
-#define GG(a, b, c, d, x, s, ac) { (a) += G((b), (c), (d)) + (x) + (unsigned int)(ac); (a) = ROTATE_LEFT((a), (s)); (a) += (b); }
-#define HH(a, b, c, d, x, s, ac) { (a) += H((b), (c), (d)) + (x) + (unsigned int)(ac); (a) = ROTATE_LEFT((a), (s)); (a) += (b); }
-#define II(a, b, c, d, x, s, ac) { (a) += I((b), (c), (d)) + (x) + (unsigned int)(ac); (a) = ROTATE_LEFT((a), (s)); (a) += (b); }
+/// 核心公式
+#define FF(a, b, c, d, x, s, co) { (a) = (b) + ROTATE_LEFT( (a) + F((b),(c),(d)) + (x) + (unsigned int)(co), (s)); }
+#define GG(a, b, c, d, x, s, co) { (a) = (b) + ROTATE_LEFT( (a) + G((b),(c),(d)) + (x) + (unsigned int)(co), (s)); }
+#define HH(a, b, c, d, x, s, co) { (a) = (b) + ROTATE_LEFT( (a) + H((b),(c),(d)) + (x) + (unsigned int)(co), (s)); }
+#define II(a, b, c, d, x, s, co) { (a) = (b) + ROTATE_LEFT( (a) + I((b),(c),(d)) + (x) + (unsigned int)(co), (s)); }
 
 /// 第一轮
 #define R1 FF(a, b, c, d, x[ 0],  7, 0xd76aa478);\
@@ -82,7 +82,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
            GG(c, d, a, b, x[11], 14, 0x265e5a51);\
            GG(b, c, d, a, x[ 0], 20, 0xe9b6c7aa);\
            GG(a, b, c, d, x[ 5],  5, 0xd62f105d);\
-           GG(d, a, b, c, x[10],  9,  0x2441453);\
+           GG(d, a, b, c, x[10],  9, 0x02441453);\
            GG(c, d, a, b, x[15], 14, 0xd8a1e681);\
            GG(b, c, d, a, x[ 4], 20, 0xe7d3fbc8);\
            GG(a, b, c, d, x[ 9],  5, 0x21e1cde6);\
@@ -106,7 +106,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
            HH(a, b, c, d, x[13],  4, 0x289b7ec6);\
            HH(d, a, b, c, x[ 0], 11, 0xeaa127fa);\
            HH(c, d, a, b, x[ 3], 16, 0xd4ef3085);\
-           HH(b, c, d, a, x[ 6], 23,  0x4881d05);\
+           HH(b, c, d, a, x[ 6], 23, 0x04881d05);\
            HH(a, b, c, d, x[ 9],  4, 0xd9d4d039);\
            HH(d, a, b, c, x[12], 11, 0xe6db99e5);\
            HH(c, d, a, b, x[15], 16, 0x1fa27cf8);\

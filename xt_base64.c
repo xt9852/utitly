@@ -12,34 +12,40 @@
 /// base64字符
 const static char BASE64_STRING[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-/// 转成base64,输入3*8=24bit,输出4*6=24bit,内存排列为,o1 o0 o3 o2 o5 o4,o2+o3组成6bit,o2+o5组成6bit
+/// 转成base64数据,输入3*8=24bit,输出4*6=24bit,内存排列为,o1 o0 o3 o2 o5 o4,o2+o3组成6bit,o2+o5组成6bit
 typedef struct _xt_base64_to
 {
-    unsigned char o0 : 2;
-    unsigned char o1 : 6;
-    unsigned char o2 : 4;
-    unsigned char o3 : 4;
-    unsigned char o4 : 6;
-    unsigned char o5 : 2;
+    unsigned char o0 : 2;               ///< 第1块数据2bit
+    unsigned char o1 : 6;               ///< 第2块数据6bit
+    unsigned char o2 : 4;               ///< 第3块数据4bit
+    unsigned char o3 : 4;               ///< 第4块数据4bit
+    unsigned char o4 : 6;               ///< 第5块数据6bit
+    unsigned char o5 : 2;               ///< 第6块数据2bit
 
-} *p_xt_base64_to;
+} xt_base64_to, *p_xt_base64_to;        ///< 转成base64数据指针
 
-/// 从base64转回,输入4*6=24bit,输出3*8=24bit,内存排列为,o1 o0 o4 o3 o2 o7 o6 o5 o9 o8,o0+o3组成8bit,o2+o6组成8bit,o5+o8组成8bit
+/// 从base64转回数据,输入4*6=24bit,输出3*8=24bit,内存排列为,o1 o0 o4 o3 o2 o7 o6 o5 o9 o8,o0+o3组成8bit,o2+o6组成8bit,o5+o8组成8bit
 typedef struct _xt_base64_from
 {
-    unsigned char o0 : 6;
-    unsigned char o1 : 2;
-    unsigned char o2 : 4;
-    unsigned char o3 : 2;
-    unsigned char o4 : 2;
-    unsigned char o5 : 2;
-    unsigned char o6 : 4;
-    unsigned char o7 : 2;
-    unsigned char o8 : 6;
-    unsigned char o9 : 2;
+    unsigned char o0 : 6;               ///< 第1块数据6bit
+    unsigned char o1 : 2;               ///< 第2块数据2bit
+    unsigned char o2 : 4;               ///< 第3块数据4bit
+    unsigned char o3 : 2;               ///< 第4块数据2bit
+    unsigned char o4 : 2;               ///< 第5块数据2bit
+    unsigned char o5 : 2;               ///< 第6块数据2bit
+    unsigned char o6 : 4;               ///< 第7块数据4bit
+    unsigned char o7 : 2;               ///< 第8块数据2bit
+    unsigned char o8 : 6;               ///< 第9块数据6bit
+    unsigned char o9 : 2;               ///< 第10块数据2bit
 
-} *p_xt_base64_from;
+} xt_base64_from, *p_xt_base64_from;    ///< 从base64转回数据指针
 
+/**
+ *\brief      转成BASE64数据
+ *\param[in]  o             数据
+ *\param[in]  i             数据位置
+ *\return     0             成功
+ */
 unsigned char to(p_xt_base64_to o, int i)
 {
 	switch(i)
@@ -53,6 +59,12 @@ unsigned char to(p_xt_base64_to o, int i)
 	return 0;
 }
 
+/**
+ *\brief      从BASE64数据转成原数据
+ *\param[in]  o             数据
+ *\param[in]  i             数据位置
+ *\return     0             成功
+ */
 unsigned char from(p_xt_base64_from o, int i)
 {
 	switch(i)
@@ -70,12 +82,12 @@ unsigned char from(p_xt_base64_from o, int i)
  *\param[in]  data          数据
  *\param[in]  data_len      数据长度
  *\param[out] base64        BASE64字符串
- *\param[out] base_len      BASE64字符串长度
+ *\param[out] base64_len    BASE64字符串长度
  *\return     0             成功
  */
-int base64_to(const char *data, int data_len, char *base64, int *base_len)
+int base64_to(const char *data, int data_len, char *base64, int *base64_len)
 {
-    if (NULL == data || data_len <=0 || NULL == base64 || *base_len <= 0)
+    if (NULL == data || data_len <=0 || NULL == base64 || *base64_len <= 0)
     {
         return -1;
     }
@@ -90,7 +102,7 @@ int base64_to(const char *data, int data_len, char *base64, int *base_len)
     DBG("times:%d remain:%d padding:%d pos_end_data:%d pos_end_base64:%d len:%d",
          times, remain, padding, pos_end_data, pos_end_base64, len);
 
-    if (*base_len <= len)
+    if (*base64_len <= len)
     {
         return -2;
     }
@@ -122,16 +134,16 @@ int base64_to(const char *data, int data_len, char *base64, int *base_len)
 
     base64[len] = '\0';
 
-	*base_len = len;
+	*base64_len = len;
 	return 0;
 }
 
 /**
- *\brief      从BASE65串得到原字符串
+ *\brief      从BASE65串得到数据
  *\param[in]  base64        BASE64字符串数据
  *\param[in]  base64_len    BASE64字符串数据长度
  *\param[out] data          输出数据缓冲
- *\param[out] data          输出数据缓冲区大小
+ *\param[out] data_len      输出数据缓冲区大小
  *\return     0             成功
  */
 int base64_from(const char *base64, int base64_len, char *data, int *data_len)

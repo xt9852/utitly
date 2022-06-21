@@ -22,7 +22,7 @@ typedef struct _xt_peyin
     char        *m;                         ///< 拼音字母
     int         len;                        ///< 拼音长
 
-} xt_peyin, *p_xt_peyin;
+} xt_peyin, *p_xt_peyin;                    ///< 拼音组数据指针
 
 /// 拼音声母
 const xt_peyin g_pinyin_sm[] = {

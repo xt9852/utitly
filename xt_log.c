@@ -152,7 +152,7 @@ void* log_thread(p_xt_log log)
 
         sec = now;
 
-        log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "%u", now);
+        //log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "%u", now);
 
         switch (log->cycle)
         {
@@ -218,6 +218,7 @@ void* log_thread(p_xt_log log)
 /**
  *\brief        初始化日志
  *\param[in]    log         日志数据,需要filename,level,cycle,backup,clean
+ *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
 int log_init(p_xt_log log)

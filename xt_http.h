@@ -10,10 +10,11 @@
 #define _XT_HTTP_H_
 #include "xt_log.h"
 
+/// 页面类型
 enum
 {
-    HTTP_TYPE_HTML = 0,
-    HTTP_TYPE_ICON
+    HTTP_TYPE_HTML = 0, ///< 页面
+    HTTP_TYPE_ICON      ///< 图标
 };
 
 /**
@@ -27,26 +28,27 @@ enum
  *\param[out]   content_len     返回内容长度
  *\return       200             成功
  */
-typedef int (*XT_HTTP_PROCESS)(const char *uri, const char **arg_name, const char **arg_data, int arg_count,
+typedef int (*XT_HTTP_PROCESS)(const char *uri, const char *arg_name[], const char *arg_data[], int arg_count,
                                int *content_type, char *content, int *content_len);
 
-/// http服务
+/// HTTP服务数据
 typedef struct _xt_http
 {
-    bool run;
+    bool            run;            ///< 服务线程是否运行
 
-    int listen_sock;
+    unsigned short  port;           ///< HTTP端口
 
-    unsigned short  port;
+    XT_HTTP_PROCESS proc;           ///< HTTP回调函数
 
-    XT_HTTP_PROCESS proc;
+    int             listen_sock;    ///< 临听socket
 
-} xt_http, *p_xt_http;
+} xt_http, *p_xt_http;              ///< HTTP服务数据指针
 
 /**
  *\brief        初始化http
- *\param[in]    http        http服务服务数据,需要port, proc
- *\return       0           成功
+ *\param[in]    http            服务数据,需要run, port, proc
+ *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0               成功
  */
 int http_init(p_xt_http http);
 

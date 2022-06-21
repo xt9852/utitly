@@ -9,7 +9,6 @@
 #ifndef _XT_PINYIN_H_
 #define _XT_PINYIN_H_
 
-
 /**
  *\brief        从资源中加载拼音数据
  *\param[in]    res_type    资源类名,"PINYIN"
@@ -21,11 +20,9 @@ int pinyin_init_res(char *res_type, int res_id);
 /**
  *\brief        从文件中加载拼音数据
  *\param[in]    filename    文件名
- *\param[out]   *data       数据
- *\param[out]   len         数据长
  *\return       0           成功
  */
-int pinyin_init(const char *filename, char **data, unsigned int *len);
+int pinyin_init(const char *filename);
 
 /**
  *\brief        将gbk转成拼音

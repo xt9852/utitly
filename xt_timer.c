@@ -14,8 +14,8 @@
 
 /**
  *\brief        检查定时器
- *\param[in]    timer   定时器
- *\param[in]    param   自定义参数
+ *\param[in]    timer       定时器
+ *\param[in]    param       自定义参数
  *\return       0
  */
 int timer_check(p_xt_timer timer, void *param)
@@ -112,17 +112,17 @@ int timer_check(p_xt_timer timer, void *param)
 
 /**
  *\brief        定时器线程
- *\param[in]    manager     定时器管理者
+ *\param[in]    set     定时器管理者
  *\return                   空
  */
-void* timer_thread(p_xt_timer_manager manager)
+void* timer_thread(p_xt_timer_set set)
 {
     DBG("begin");
 
     unsigned int now;
     unsigned int sec = 0;
 
-    while (manager->run)
+    while (set->run)
     {
         msleep(100);
 
@@ -135,9 +135,9 @@ void* timer_thread(p_xt_timer_manager manager)
 
         sec = now;
 
-        //DBG("%u", now);
+        DBG("%u", now);
 
-        list_proc(&(manager->timer_list), timer_check, (void*)now);
+        list_proc(&(set->timer_list), timer_check, (void*)now);
     }
 
     DBG("exit");
@@ -146,31 +146,32 @@ void* timer_thread(p_xt_timer_manager manager)
 
 /**
  *\brief        定时器初始化
- *\param[in]    manager 定时器管理者
- *\return       0       成功
+ *\param[in]    set     定时器管理者
+ *\attention    set     需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0           成功
  */
-int timer_init(p_xt_timer_manager manager)
+int timer_init(p_xt_timer_set set)
 {
-    if (NULL == manager)
+    if (NULL == set)
     {
         return -1;
     }
 
-    int ret = list_init(&(manager->timer_list));
+    int ret = list_init(&(set->timer_list));
 
     if (0 != ret)
     {
         return -2;
     }
 
-    manager->run = true;
+    set->run = true;
 
     pthread_t tid;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    // 退出时自行释放所占用的资源
 
-    ret = pthread_create(&tid, &attr, timer_thread, manager);
+    ret = pthread_create(&tid, &attr, timer_thread, set);
 
     if (ret != 0)
     {
@@ -184,19 +185,19 @@ int timer_init(p_xt_timer_manager manager)
 
 /**
  *\brief        定时器反初始化
- *\param[in]    manager 定时器管理者
- *\return       0       成功
+ *\param[in]    set     定时器管理者
+ *\return       0           成功
  */
-int timer_uninit(p_xt_timer_manager manager)
+int timer_uninit(p_xt_timer_set set)
 {
-    manager->run = false;
+    set->run = false;
 
-    list_uninit(&manager->timer_list);
+    list_uninit(&set->timer_list);
 }
 
 /**
  *\brief        添加周期定时器
- *\param[in]    manager     定时器管理者
+ *\param[in]    set         定时器管理者
  *\param[in]    name        定时器名称
  *\param[in]    cycle       定时器循环周期秒
  *\param[in]    thread_pool 线程池
@@ -204,10 +205,10 @@ int timer_uninit(p_xt_timer_manager manager)
  *\param[in]    param       任务回调函数自定义参数,可以为NULLs
  *\return       0           成功
  */
-int timer_add_cycle(p_xt_timer_manager manager, const char *name, unsigned int cycle,
+int timer_add_cycle(p_xt_timer_set set, const char *name, unsigned int cycle,
                     p_xt_thread_pool thread_pool, XT_THREAD_POOL_TASK_CALLBACK task, void *param)
 {
-    if (NULL == manager || NULL == name || NULL == thread_pool || NULL == task)
+    if (NULL == set || NULL == name || NULL == thread_pool || NULL == task)
     {
         return -1;
     }
@@ -221,12 +222,12 @@ int timer_add_cycle(p_xt_timer_manager manager, const char *name, unsigned int c
     timer->task.param   = param;
     strncpy_s(timer->name, sizeof(timer->name), name, sizeof(timer->name) - 1);
 
-    return list_tail_push(&(manager->timer_list), timer);
+    return list_tail_push(&(set->timer_list), timer);
 }
 
 /**
  *\brief        添加条件定时器
- *\param[in]    manager     定时器管理者
+ *\param[in]    set         定时器管理者
  *\param[in]    name        定时器名称
  *\param[in]    type        定时器类型:TIMER_CRON_YDAY,TIMER_CRON_WDAY,...
  *\param[in]    yday        天/年 0-365
@@ -241,14 +242,14 @@ int timer_add_cycle(p_xt_timer_manager manager, const char *name, unsigned int c
  *\param[in]    param       任务回调函数自定义参数,可以为NULL
  *\return       0           成功
  */
-int timer_add_cron(p_xt_timer_manager manager,
+int timer_add_cron(p_xt_timer_set set,
                    const char *name, unsigned int type,
                    unsigned short yday, unsigned char wday,
                    unsigned char mon, unsigned char mday,
                    unsigned char hour, unsigned char min, unsigned char sec,
                    p_xt_thread_pool thread_pool, XT_THREAD_POOL_TASK_CALLBACK task, void *param)
 {
-    if (NULL == manager || NULL == name || NULL == thread_pool || NULL == task)
+    if (NULL == set || NULL == name || NULL == thread_pool || NULL == task)
     {
         return -1;
     }
@@ -267,5 +268,5 @@ int timer_add_cron(p_xt_timer_manager manager,
     timer->task.param   = param;
     strncpy_s(timer->name, sizeof(timer->name), name, sizeof(timer->name) - 1);
 
-    return list_tail_push(&(manager->timer_list), timer);
+    return list_tail_push(&(set->timer_list), timer);
 }

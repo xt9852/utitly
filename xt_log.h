@@ -12,44 +12,45 @@
 #ifdef _WINDOWS
 #include <windows.h>
 #include <process.h>
-#define close           closesocket
-#define sleep(n)        Sleep(n*1000)
-#define msleep(n)       Sleep(n)
-#define getpid()        _getpid()
-#define gettid()        GetCurrentThreadId()
-#define strncasecmp     strnicmp
-#define PATH_SEGM       '\\'
-#define D(l, ...)       log_write(l, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)
-#define DBG(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)
-#define MSG(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  __VA_ARGS__)
-#define WAR(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  __VA_ARGS__)
-#define ERR(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, __VA_ARGS__)
+#define close           closesocket             ///< 关闭端口
+#define sleep(n)        Sleep(n*1000)           ///< 等待1秒
+#define msleep(n)       Sleep(n)                ///< 等待1毫秒
+#define getpid()        _getpid()               ///< 得到进程ID
+#define gettid()        GetCurrentThreadId()    ///< 得到线程ID
+#define strncasecmp     strnicmp                ///< 不区分大小写的比较
+#define PATH_SEGM       '\\'                    ///< WINDOWS路径分割符
+#define D(l, ...)       log_write(l, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)        ///< 指定文件输出
+#define DBG(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)   ///< 调试
+#define MSG(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  __VA_ARGS__)   ///< 信息
+#define WAR(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  __VA_ARGS__)   ///< 警告
+#define ERR(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, __VA_ARGS__)   ///< 错误
 #else
-#define PATH_SEGM       '/'
-#define DBG (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, ##args)
-#define MSG (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  ##args)
-#define WAR (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  ##args)
-#define ERR (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, ##args)
+#define PATH_SEGM       '/'                     ///< LINUX路径分割符
+#define DBG (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, ##args)        ///< 调试
+#define MSG (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  ##args)        ///< 信息
+#define WAR (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  ##args)        ///< 警告
+#define ERR (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, ##args)        ///< 错误
 #endif
 
+
 #ifndef bool
-#define bool  unsigned char
+#define bool  unsigned char                 ///< 布尔类型
 #endif
 
 #ifndef true
-#define true  1
+#define true  1                             ///< 真值
 #endif
 
 #ifndef false
-#define false 0
+#define false 0                             ///< 假值
 #endif
 
 #ifndef NULL
-#define NULL 0
+#define NULL 0                              ///< 空
 #endif
 
 #ifndef SIZEOF
-#define SIZEOF(x)   sizeof(x)/sizeof(x[0])
+#define SIZEOF(x)   sizeof(x)/sizeof(x[0])  ///< 元素数量
 #endif
 
 /// 日志级别
@@ -89,6 +90,7 @@ extern xt_log g_log;                ///< 全局日志指针
 /**
  *\brief        初始化日志
  *\param[in]    log         日志数据,需要filename,level,cycle,backup,clean
+ *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
 int log_init(p_xt_log log);

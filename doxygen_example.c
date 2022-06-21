@@ -5,7 +5,14 @@
  *\version      1.0.0
  *\date         2022.06.08
  *\brief        doxygen注释实例,UTF-8(No BOM)
+ *\note         注解
+ *\attention    注意
+ *\warning      警告
+ *\enum         enum_test   引用枚举
+ *\class                    类
+ *\exception                异常
  */
+#include <stdio.h>
 
 /**
  *\mainpage 此注释能够由doxygen提取, 支持markdown格式
@@ -41,8 +48,6 @@
  *
  */
 
-#include <stdio.h>
-
 /// 结构体定义
 typedef struct _struct_info
 {
@@ -52,21 +57,23 @@ typedef struct _struct_info
 } struct_info, *p_struct_info;      ///< 结构体类型
 
 /// 枚举定义
-enum
+enum enum_test
 {
     ENUM1,                          ///< 枚举1
     ENUM2                           ///< 枚举2
 };
 
-int   g_doxygen_example1  = 0;      ///< 全局变量1
+int   g_doxygen_1  = 0;             ///< 全局变量1
 
-char *g_doxygen_example2  = NULL;   ///< 全局变量1
+char *g_doxygen_2  = NULL;          ///< 全局变量1
 
 /**
- *\brief       设置日志文件名
- *\param[in]   param1      参数1
- *\param[out]  param2      参数2
- *\return      0           成功
+ *\brief        设置日志文件名
+ *\param[in]    param1      参数1
+ *\param[out]   param2      参数2
+ *\attention    manager     需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0           成功
+ *\retval                   整形
  */
 void doxygen_example(int param1, char *param2)
 {
@@ -74,4 +81,7 @@ void doxygen_example(int param1, char *param2)
     {
         printf("%d %d %s\n", i, param1, param2);
     }
+
+    g_doxygen_1  = 0;
+    g_doxygen_2  = NULL;
 }

@@ -13,7 +13,7 @@
 
 typedef void (*XT_THREAD_POOL_TASK_CALLBACK)(void*);   ///< 线程池回调接口
 
-/// 线程任务
+/// 线程任务数据
 typedef struct _xt_thread_pool_task
 {
     XT_THREAD_POOL_TASK_CALLBACK    proc;               ///< 任务回调
@@ -22,7 +22,7 @@ typedef struct _xt_thread_pool_task
 
 } xt_thread_pool_task, *p_xt_thread_pool_task;          ///< 任务指针
 
-/// 线程池
+/// 线程池数据
 typedef struct _xt_thread_pool
 {
     bool            run;                                ///< 线程是否运行
@@ -33,11 +33,12 @@ typedef struct _xt_thread_pool
 
     xt_list         task_queue;                         ///< 任务队列
 
-} xt_thread_pool, *p_xt_thread_pool;
+} xt_thread_pool, *p_xt_thread_pool;                    ///< 线程池数据指针
 
 /**
  *\brief        线程池初始化
  *\param[in]    pool    线程池
+ *\attention    pool    需要转递到线线程中,不要释放此内存,否则会野指针
  *\param[in]    count   线程数量
  *\return       0       成功
  */

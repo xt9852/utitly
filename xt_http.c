@@ -12,30 +12,30 @@
 #include <pthread.h>
 #include "xt_http.h"
 
+/// 使用IPV4
 #define NETWORK_IPV4
 
+/// 参数数量
 #define ARG_SIZE        128
 
+/// 请求头
 #define HTTP_HEAD       "HTTP/1.1 %s\nContent-Type: %s\nContent-Length: %d\n\n"
 
+/// 404时返回数据
 #define HTTP_FILE_404   "404"
 
+/// 客户端线程参数
 typedef struct _client_thread_param
 {
-    int client_sock;
-    p_xt_http http;
+    int         client_sock;    ///< 客户端socket
 
-} client_thread_param, *p_client_thread_param;
+    p_xt_http   http;           ///< http数据
 
-const static char *g_http_code[] = {
-    "200 OK",
-    "404 Not Found"
-};
+} client_thread_param, *p_client_thread_param;  ///< 客户端线程参数指针
 
-const static char *g_http_type[] = {
-    "text/html",
-    "image/x-icon"
-};
+const static char *g_http_code[] = { "200 OK", "404 Not Found" };   ///< 状态码
+
+const static char *g_http_type[] = { "text/html", "image/x-icon" }; ///< 页面类型
 
 /**
  *\brief        十六进制字符转数字
@@ -150,7 +150,7 @@ int http_get_arg(char *uri, char **arg_name, char **arg_data, int *arg_count)
  *\brief        得到URI
  *\param[in]    buff        数据包
  *\param[out]   uri         URI地址
- *\param[in]    uri         URI地址缓冲区大小
+ *\param[in]    uri_size    URI地址缓冲区大小
  *\return       0           成功
  */
 int http_get_uri(const char *buff, char *uri, int uri_size)
@@ -169,12 +169,12 @@ int http_get_uri(const char *buff, char *uri, int uri_size)
 }
 
 /**
- *\brief       处理客户端的请求
- *\param[in]   http         http服务数据
- *\param[in]   client_sock  客户端socket
- *\param[in]   buff         数据缓冲区
- *\param[in]   buff_size    数据缓冲区大小
- *\return      0            成功
+ *\brief        处理客户端的请求
+ *\param[in]    http            http服务数据
+ *\param[in]    client_sock     客户端socket
+ *\param[in]    buff            数据缓冲区
+ *\param[in]    buff_size       数据缓冲区大小
+ *\return       0               成功
  */
 int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_size)
 {
@@ -220,7 +220,9 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
 
     if (0 == ret)
     {
+        DBG("call proc beg");
         ret = http->proc(uri, arg_name, arg_data, arg_count, &content_type, content, &content_len);
+        DBG("call proc end");
     }
 
     if (ret != 0)
@@ -245,9 +247,9 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
 }
 
 /**
- *\brief       客户端处理函数
- *\param[in]   param        客户端socket和http服务数据
- *\return                   空
+ *\brief        客户端处理函数
+ *\param[in]    param           客户端socket和http服务数据
+ *\return                       空
  */
 void* http_client_thread(p_client_thread_param param)
 {
@@ -272,9 +274,9 @@ void* http_client_thread(p_client_thread_param param)
 }
 
 /**
- *\brief       处理客户端的连接
- *\param[in]   http         http服务数据
- *\return      0            成功
+ *\brief        处理客户端的连接
+ *\param[in]    http            http服务数据
+ *\return       0               成功
  */
 int http_server_wait_client_connect(p_xt_http http)
 {
@@ -325,9 +327,9 @@ int http_server_wait_client_connect(p_xt_http http)
 }
 
 /**
- *\brief       创建监听socket
- *\param[in]   port         端口
- *\return      0            成功
+ *\brief        创建监听socket
+ *\param[in]    port            端口
+ *\return       0               成功
  */
 int http_server_create_listen_socket(unsigned short port)
 {
@@ -391,9 +393,9 @@ int http_server_create_listen_socket(unsigned short port)
 }
 
 /**
- *\brief       HTTP服务主线程
- *\param[in]   http         http服务数据
- *\return                   空
+ *\brief        HTTP服务主线程
+ *\param[in]    http            http服务数据
+ *\return                       空
  */
 void* http_server_thread(p_xt_http http)
 {
@@ -424,9 +426,10 @@ void* http_server_thread(p_xt_http http)
 }
 
 /**
- *\brief       初始化http
- *\param[in]    http    http服务数据,需要port, proc
- *\return       0       成功
+ *\brief        初始化http
+ *\param[in]    http            服务数据,需要run, port, proc
+ *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0               成功
  */
 int http_init(p_xt_http http)
 {

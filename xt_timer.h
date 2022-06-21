@@ -49,31 +49,32 @@ typedef struct _xt_timer
 } xt_timer, *p_xt_timer;                    ///< 定时器指针
 
 /// 定时器数据结构
-typedef struct _xt_timer_manager
+typedef struct _xt_timer_set
 {
     bool                    run;            ///< 定时器线程是否运行
 
     xt_list                 timer_list;     ///< 定时器列表
 
-} xt_timer_manager, *p_xt_timer_manager;
+} xt_timer_set, *p_xt_timer_set;            ///< 定时器数据结构指针
 
 /**
  *\brief        定时器初始化
- *\param[in]    manager     定时器管理者
+ *\param[in]    set         定时器管理者
+ *\attention    set         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int timer_init(p_xt_timer_manager manager);
+int timer_init(p_xt_timer_set set);
 
 /**
  *\brief        定时器反初始化
- *\param[in]    manager     定时器管理者
+ *\param[in]    set         定时器管理者
  *\return       0           成功
  */
-int timer_uninit(p_xt_timer_manager manager);
+int timer_uninit(p_xt_timer_set set);
 
 /**
  *\brief        添加周期定时器
- *\param[in]    manager     定时器管理者
+ *\param[in]    set         定时器管理者
  *\param[in]    name        定时器名称
  *\param[in]    cycle       定时器循环周期秒
  *\param[in]    thread_pool 线程池
@@ -81,12 +82,12 @@ int timer_uninit(p_xt_timer_manager manager);
  *\param[in]    param       任务回调函数自定义参数,可以为NULLs
  *\return       0           成功
  */
-int timer_add_cycle(p_xt_timer_manager manager, const char *name, unsigned int cycle,
+int timer_add_cycle(p_xt_timer_set set, const char *name, unsigned int cycle,
                     p_xt_thread_pool thread_pool, XT_THREAD_POOL_TASK_CALLBACK task, void *param);
 
 /**
  *\brief        添加条件定时器
- *\param[in]    manager     定时器管理者
+ *\param[in]    set         定时器管理者
  *\param[in]    name        定时器名称
  *\param[in]    type        定时器类型:TIMER_CRON_YDAY,TIMER_CRON_WDAY,...
  *\param[in]    yday        天/年 0-365
@@ -101,7 +102,7 @@ int timer_add_cycle(p_xt_timer_manager manager, const char *name, unsigned int c
  *\param[in]    param       任务回调函数自定义参数,可以为NULL
  *\return       0           成功
  */
-int timer_add_cron(p_xt_timer_manager manager,
+int timer_add_cron(p_xt_timer_set set,
                    const char *name, unsigned int type,
                    unsigned short yday, unsigned char wday,
                    unsigned char mon, unsigned char mday,

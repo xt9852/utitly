@@ -47,6 +47,7 @@ void* thread_pool_thread(p_xt_thread_pool pool)
 /**
  *\brief        线程池初始化
  *\param[in]    pool    线程池
+ *\attention    pool    需要转递到线线程中,不要释放此内存,否则会野指针
  *\param[in]    count   线程数量
  *\return       0       成功
  */
