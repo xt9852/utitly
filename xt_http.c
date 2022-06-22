@@ -21,6 +21,9 @@
 /// 404时返回数据
 #define HTTP_FILE_404   "404"
 
+/// 十六进制字符
+const static char HEX_STR[] = "0123456789ABCDEF";
+
 /// 客户端线程参数
 typedef struct _client_thread_param
 {
@@ -57,15 +60,62 @@ char http_to_hex(char ch)
 }
 
 /**
- *\brief        转成参数,%3A%2F%2F
- *\param[out]   arg         转成参数
+ *\brief        URI编码
+ *\param[in]    in          原始的数据
+ *\param[in]    in_len      原始的数据长度
+ *\param[out]   out         编码后数据
+ *\param[out]   out_len     输入数据缓冲区大小,输出编码后数据长度
  *\return       0           成功
  */
-int http_proc_arg(char *arg)
+int uri_encode(const char *in, int in_len, char *out, int *out_len)
 {
+    if (NULL == in || NULL == out || NULL == out_len || *out_len < in_len * 3)
+    {
+        return -1;
+    }
+
+    int j = 0;
+    unsigned char hex;
+
+    for (int i = 0; i < in_len; i++)
+    {
+        if ((in[i] >= '0' && in[i] <= '9') || (in[i] >= 'a' && in[i] <= '9') || (in[i] >= 'A' && in[i] <= 'Z'))
+        {
+            out[j++] = in[i];
+        }
+        else
+        {
+            hex = in[i];
+            out[j++] = '%';
+            out[j++] = HEX_STR[hex / 16];
+            out[j++] = HEX_STR[hex % 16];
+        }
+    }
+
+    out[j] = '\0';
+    *out_len = j;
+
+    return 0;
+}
+
+/**
+ *\brief        URI解码
+ *\param[in]    in          URI数据
+ *\param[in]    in_len      URI数据长度
+ *\param[out]   out         原始数据
+ *\param[out]   out_len     输入数据缓冲区大小,输出解码后数据长度
+ *\return       0           成功
+ */
+int uri_decode(char *in, int in_len, char *out, int *out_len)
+{
+    if (NULL == in || NULL == out || NULL == out_len || *out_len < in_len)
+    {
+        return -1;
+    }
+
     int   pos = 0;
     int   len = 0;
-    char *beg = arg;
+    char *beg = in;
     char  hex[2];
 
     char *token = strtok_s(beg, "%", &beg);
@@ -75,7 +125,7 @@ int http_proc_arg(char *arg)
         if (0 == i)
         {
             pos = len = strlen(token);
-            strcpy_s(arg, len + 1, token);
+            strcpy_s(out, len + 1, token);
         }
         else
         {
@@ -83,21 +133,21 @@ int http_proc_arg(char *arg)
 
             if (hex[0] < 0)
             {
-                return -1;
+                return -2;
             }
 
             hex[1] = http_to_hex(token[1]);
 
             if (hex[1] < 0)
             {
-                return -2;
+                return -3;
             }
 
-            arg[pos++] = hex[0] * 16 + hex[1];
+            out[pos++] = hex[0] * 16 + hex[1];
 
             len = strlen(token) - 2;
 
-            strcpy_s(arg + pos, len + 1, token + 2);
+            strcpy_s(out + pos, len + 1, token + 2);
 
             pos += len;
         }
@@ -127,6 +177,7 @@ int http_get_arg(char *uri, p_xt_http_arg arg)
     *beg++ = '\0';  // 后移一位到参数
 
     int i;
+    int len;
     char *data;
 
     char *token = strtok_s(beg, "&", &beg);
@@ -139,15 +190,17 @@ int http_get_arg(char *uri, p_xt_http_arg arg)
 
         if (NULL == equ)
         {
+            len = 0;
             data = "";
         }
         else
         {
             *equ++ = '\0';
             data = equ;
+            len = strlen(data);
         }
 
-        if (http_proc_arg(data) != 0)
+        if (uri_decode(data, len, data, &len) != 0)
         {
             return -1;
         }
@@ -441,16 +494,22 @@ void* http_server_thread(p_xt_http http)
 
 /**
  *\brief        初始化http
- *\param[in]    http            服务数据,需要run, port, proc
+ *\param[in]    port            监听端口
+ *\param[in]    proc            处理请求回调
+ *\param[in]    http            服务数据
  *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0               成功
  */
-int http_init(p_xt_http http)
+int http_init(unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
 {
     if (NULL == http)
     {
         return -1;
     }
+
+    http->run  = true;
+    http->port = port;
+    http->proc = proc;
 
     pthread_t tid;
 

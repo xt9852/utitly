@@ -10,35 +10,35 @@
 #include "xt_log.h"
 
 /// base64字符
-const static char BASE64_STRING[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const static char BASE64_STR[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /// 转成base64数据,输入3*8=24bit,输出4*6=24bit,内存排列为,o1 o0 o3 o2 o5 o4,o2+o3组成6bit,o2+o5组成6bit
-typedef struct _xt_base64_to
+typedef struct _xt_base64_encode
 {
-    unsigned char o0 : 2;               ///< 第1块数据2bit
-    unsigned char o1 : 6;               ///< 第2块数据6bit
-    unsigned char o2 : 4;               ///< 第3块数据4bit
-    unsigned char o3 : 4;               ///< 第4块数据4bit
-    unsigned char o4 : 6;               ///< 第5块数据6bit
-    unsigned char o5 : 2;               ///< 第6块数据2bit
+    unsigned char o0 : 2;                   ///< 第1块数据2bit
+    unsigned char o1 : 6;                   ///< 第2块数据6bit
+    unsigned char o2 : 4;                   ///< 第3块数据4bit
+    unsigned char o3 : 4;                   ///< 第4块数据4bit
+    unsigned char o4 : 6;                   ///< 第5块数据6bit
+    unsigned char o5 : 2;                   ///< 第6块数据2bit
 
-} xt_base64_to, *p_xt_base64_to;        ///< 转成base64数据指针
+} xt_base64_encode, *p_xt_base64_encode;    ///< 转成base64数据指针
 
 /// 从base64转回数据,输入4*6=24bit,输出3*8=24bit,内存排列为,o1 o0 o4 o3 o2 o7 o6 o5 o9 o8,o0+o3组成8bit,o2+o6组成8bit,o5+o8组成8bit
-typedef struct _xt_base64_from
+typedef struct _xt_base64_decode
 {
-    unsigned char o0 : 6;               ///< 第1块数据6bit
-    unsigned char o1 : 2;               ///< 第2块数据2bit
-    unsigned char o2 : 4;               ///< 第3块数据4bit
-    unsigned char o3 : 2;               ///< 第4块数据2bit
-    unsigned char o4 : 2;               ///< 第5块数据2bit
-    unsigned char o5 : 2;               ///< 第6块数据2bit
-    unsigned char o6 : 4;               ///< 第7块数据4bit
-    unsigned char o7 : 2;               ///< 第8块数据2bit
-    unsigned char o8 : 6;               ///< 第9块数据6bit
-    unsigned char o9 : 2;               ///< 第10块数据2bit
+    unsigned char o0 : 6;                   ///< 第1块数据6bit
+    unsigned char o1 : 2;                   ///< 第2块数据2bit
+    unsigned char o2 : 4;                   ///< 第3块数据4bit
+    unsigned char o3 : 2;                   ///< 第4块数据2bit
+    unsigned char o4 : 2;                   ///< 第5块数据2bit
+    unsigned char o5 : 2;                   ///< 第6块数据2bit
+    unsigned char o6 : 4;                   ///< 第7块数据4bit
+    unsigned char o7 : 2;                   ///< 第8块数据2bit
+    unsigned char o8 : 6;                   ///< 第9块数据6bit
+    unsigned char o9 : 2;                   ///< 第10块数据2bit
 
-} xt_base64_from, *p_xt_base64_from;    ///< 从base64转回数据指针
+} xt_base64_decode, *p_xt_base64_decode;    ///< 从base64转回数据指针
 
 /**
  *\brief      转成BASE64数据
@@ -46,7 +46,7 @@ typedef struct _xt_base64_from
  *\param[in]  i             数据位置
  *\return     0             成功
  */
-unsigned char to(p_xt_base64_to o, int i)
+unsigned char encode(p_xt_base64_encode o, int i)
 {
 	switch(i)
 	{
@@ -65,7 +65,7 @@ unsigned char to(p_xt_base64_to o, int i)
  *\param[in]  i             数据位置
  *\return     0             成功
  */
-unsigned char from(p_xt_base64_from o, int i)
+unsigned char decode(p_xt_base64_decode o, int i)
 {
 	switch(i)
 	{
@@ -85,7 +85,7 @@ unsigned char from(p_xt_base64_from o, int i)
  *\param[out] base64_len    BASE64字符串长度
  *\return     0             成功
  */
-int base64_to(const char *data, int data_len, char *base64, int *base64_len)
+int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
 {
     if (NULL == data || data_len <=0 || NULL == base64 || *base64_len <= 0)
     {
@@ -107,24 +107,24 @@ int base64_to(const char *data, int data_len, char *base64, int *base64_len)
         return -2;
     }
 
-	p_xt_base64_to item = (p_xt_base64_to)data;
+	p_xt_base64_encode item = (p_xt_base64_encode)data;
 
 	for (int i = 0; i < times; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			base64[i * 4 + j] = BASE64_STRING[to(item, j)];
+			base64[i * 4 + j] = BASE64_STR[encode(item, j)];
 		}
 
 		item++;
 	}
 
-	struct _xt_base64_to tail = {0};
+	xt_base64_encode tail = {0};
 	memcpy(&tail, &data[pos_end_data], remain);
 
 	for (int i = 0; i < remain + 1; i++)    // 因为1个字节变成base64时大于1位所以加1
 	{
-		base64[pos_end_base64 + i] = BASE64_STRING[to(&tail, i)];
+		base64[pos_end_base64 + i] = BASE64_STR[encode(&tail, i)];
 	}
 
 	for (int i = 0; i < padding; i++)
@@ -146,7 +146,7 @@ int base64_to(const char *data, int data_len, char *base64, int *base64_len)
  *\param[out] data_len      输出数据缓冲区大小
  *\return     0             成功
  */
-int base64_from(const char *base64, int base64_len, char *data, int *data_len)
+int base64_decode(const char *base64, int base64_len, char *data, int *data_len)
 {
     if (NULL == base64 || base64_len <= 0 || NULL == data || *data_len <=0)
     {
@@ -188,13 +188,13 @@ int base64_from(const char *base64, int base64_len, char *data, int *data_len)
 	}
 
 	int times = count / 4;
-	p_xt_base64_from item = (p_xt_base64_from)buff;
+	p_xt_base64_decode item = (p_xt_base64_decode)buff;
 
 	for (int i = 0; i < times; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			data[i*3 + j] = from(item, j);
+			data[i*3 + j] = decode(item, j);
 		}
 
 		item++;

@@ -217,11 +217,17 @@ void* log_thread(p_xt_log log)
 
 /**
  *\brief        初始化日志
- *\param[in]    log         日志数据,需要filename,level,cycle,backup,clean
+ *\param[in]    filename    日志文件名前缀
+ *\param[in]    level       日志级别(调试,信息,警告,错误)
+ *\param[in]    cycle       日志文件保留周期(时,天,周)
+ *\param[in]    backup      日志文件保留数量
+ *\param[in]    clean       首次打开日志文件时是否清空文件内容
+ *\param[in]    root        文件目录根位置
+ *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init(p_xt_log log)
+int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log)
 {
     if (NULL == log)
     {
@@ -229,22 +235,23 @@ int log_init(p_xt_log log)
         return -1;
     }
 
-    if (log->run)
-    {
-        printf("%s|inited\n", __FUNCTION__);
-        return -2;
-    }
+    strcpy_s(log->filename, sizeof(log->filename), filename);
+    log->file  = NULL;
+    log->level  = level;
+    log->cycle  = cycle;
+    log->backup = backup;
+    log->clean  = clean;
+    log->root   = root;
+    log->run    = false;
 
-    log->file = NULL;
-
-    int ret = log_add_new(log, (int)time(NULL), log->clean);
+    int ret = log_add_new(log, (int)time(NULL), clean);
 
     if (0 != ret)
     {
-        return -3;
+        return -2;
     }
 
-    if (0 == log->backup)    // 不删除旧文件,就不需要创建线程
+    if (0 == backup)    // 不删除旧文件,就不需要创建线程
     {
         log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "backup:%d", log->backup);
         return 0;
@@ -318,9 +325,10 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     ts = tv.tv_sec;
     localtime_s(&tm, &ts);
 
-    len = snprintf(buff, BUFF_SIZE, "%02d:%02d:%02d.%03d|%d|%d|%c|%s:%d|%s|",
+    len = snprintf(buff, BUFF_SIZE, "%02d%02d%02d%03d|%d|%d|%c|%s:%d|%s|",
                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000,
-                   getpid(), gettid(), XT_LOG_LEVEL[level], file, line, func);
+                   getpid(), gettid(), XT_LOG_LEVEL[level],
+                   file + log->root, line, func);
 
     len += vsnprintf(&buff[len], BUFF_SIZE - len, fmt, arg);
 

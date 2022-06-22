@@ -17,7 +17,7 @@
  *\param[out] base64_len    BASE64字符串长度
  *\return     0             成功
  */
-int base64_to(const char *data, int data_len, char *base64, int *base64_len);
+int base64_encode(const char *data, int data_len, char *base64, int *base64_len);
 
 /**
  *\brief      从BASE65串得到原字符串
@@ -27,6 +27,6 @@ int base64_to(const char *data, int data_len, char *base64, int *base64_len);
  *\param[out] data_len      输出数据缓冲区大小
  *\return     0             成功
  */
-int base64_from(const char *base64, int base64_len, char *data, int *data_len);
+int base64_decode(const char *base64, int base64_len, char *data, int *data_len);
 
 #endif

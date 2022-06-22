@@ -54,32 +54,35 @@
 #endif
 
 /// 日志级别
-enum
+typedef enum _LOG_LEVEL
 {
     LOG_LEVEL_DEBUG,                ///< 调试
     LOG_LEVEL_INFO,                 ///< 信息
     LOG_LEVEL_WARN,                 ///< 警告
     LOG_LEVEL_ERROR                 ///< 错误
-};
+
+} LOG_LEVEL;
 
 /// 日志文件保留周期
-enum
+typedef enum _LOG_CYCLE
 {
     LOG_CYCLE_MINUTE,               ///< 分钟
     LOG_CYCLE_HOUR,                 ///< 时
     LOG_CYCLE_DAY,                  ///< 天
     LOG_CYCLE_WEEK,                 ///< 周
-};
+
+} LOG_CYCLE;
 
 /// 日志信息
 typedef struct _xt_log
 {
     char            filename[512];  ///< 日志文件名
-    int             level;          ///< 日志级别(调试,信息,警告,错误)
-    int             cycle;          ///< 日志文件保留周期(时,天,周)
-    int             backup;         ///< 日志文件保留数量
+    LOG_LEVEL       level;          ///< 日志级别(调试,信息,警告,错误)
+    LOG_CYCLE       cycle;          ///< 日志文件保留周期(时,天,周)
+    unsigned int    backup;         ///< 日志文件保留数量
     bool            clean;          ///< 首次打开日志文件时是否清空文件内容
 
+    unsigned int    root;           ///< 文件目录根位置
     bool            run;            ///< 日志线程是否运行
     FILE*           file;           ///< 日志文件句柄
 
@@ -89,11 +92,17 @@ extern xt_log g_log;                ///< 全局日志指针
 
 /**
  *\brief        初始化日志
- *\param[in]    log         日志数据,需要filename,level,cycle,backup,clean
+ *\param[in]    filename    日志文件名前缀
+ *\param[in]    level       日志级别(调试,信息,警告,错误)
+ *\param[in]    cycle       日志文件保留周期(时,天,周)
+ *\param[in]    backup      日志文件保留数量
+ *\param[in]    clean       首次打开日志文件时是否清空文件内容
+ *\param[in]    root        文件目录根位置
+ *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init(p_xt_log log);
+int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log);
 
 /**
  *\brief        反初始化日志

@@ -70,10 +70,32 @@ typedef struct _xt_http
 
 /**
  *\brief        初始化http
+ *\param[in]    port            监听端口
+ *\param[in]    proc            处理请求回调
  *\param[in]    http            服务数据,需要run, port, proc
  *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0               成功
  */
-int http_init(p_xt_http http);
+int http_init(unsigned short port, XT_HTTP_CALLBACK callback, p_xt_http http);
+
+/**
+ *\brief        URI编码
+ *\param[in]    in          原始的数据
+ *\param[in]    in_len      原始的数据长度
+ *\param[out]   out         编码后数据
+ *\param[out]   out_len     输入数据缓冲区大小,输出编码后数据长度
+ *\return       0           成功
+ */
+int uri_encode(const char *in, int in_len, char *out, int *out_len);
+
+/**
+ *\brief        URI解码
+ *\param[in]    in          URI数据
+ *\param[in]    in_len      URI数据长度
+ *\param[out]   out         原始数据
+ *\param[out]   out_len     输入数据缓冲区大小,输出解码后数据长度
+ *\return       0           成功
+ */
+int uri_decode(char *in, int in_len, char *out, int *out_len);
 
 #endif
