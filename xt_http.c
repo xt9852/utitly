@@ -54,7 +54,7 @@ char http_to_hex(char ch)
     }
     else
     {
-        ERR("ch:0x%02x", ch);
+        E("ch:0x%02x", ch);
         return -1;
     }
 }
@@ -207,7 +207,7 @@ int http_get_arg(char *uri, p_xt_http_arg arg)
 
         arg->data[i] = data;
 
-        DBG("arg[%d] name:%s data:%s", i, arg->name[i], data);
+        D("arg[%d] name:%s data:%s", i, arg->name[i], data);
         token = strtok_s(NULL, "&", &beg);
     }
 
@@ -228,7 +228,7 @@ int http_get_uri(const char *buff, char *uri, int uri_size)
 
     if (NULL == end)
     {
-        ERR("request uri:%s error", uri);
+        E("request uri:%s Eor", uri);
         return -1;
     }
 
@@ -251,12 +251,12 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
 
     if (data_len < 0)
     {
-        ERR("recv failed, errno %d", errno);
+        E("recv failed, errno %d", errno);
         return -1;
     }
     else if (data_len == 0) // Connection closed
     {
-        DBG("connection closed");
+        D("connection closed");
         return -2;
     }
 
@@ -264,7 +264,7 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
 
     if (0 != strncmp(buff, "GET", 3))
     {
-        ERR("request is not GET");
+        E("request is not GET");
         return 1;
     }
 
@@ -279,7 +279,7 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
         return -3;
     }
 
-    DBG("sock:%d recv:%d uri:%s", client_sock, data_len, uri);
+    D("sock:%d recv:%d uri:%s", client_sock, data_len, uri);
 
     ret = http_get_arg(uri, &arg);
 
@@ -290,7 +290,7 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
 
     ret = http->proc(uri, &arg, &content);
 
-    DBG("call http callback end ret:%d", ret);
+    D("call http callback end ret:%d", ret);
 
     if (0 != ret)
     {
@@ -304,12 +304,12 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
     ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[content.type], content.len);
 
     ret = send(client_sock, head, ret, 0);                  // 发送头部
-    DBG("send head len:%d", ret);
+    D("send head len:%d", ret);
 
     ret = send(client_sock, content.data, content.len, 0);  // 发送内容
-    DBG("send content len:%d", ret);
+    D("send content len:%d", ret);
 
-    //DBG("\n%s", head);
+    //D("\n%s", head);
     return 0;
 }
 
@@ -320,7 +320,7 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
  */
 void* http_client_thread(p_client_thread_param param)
 {
-    DBG("running...");
+    D("running...");
 
     int client_sock = param->client_sock;
     int buff_size = 10*1024*1024;
@@ -328,7 +328,7 @@ void* http_client_thread(p_client_thread_param param)
 
     while (http_client_request(param->http, client_sock, buff, buff_size) >= 0);
 
-    DBG("close client socket %d", client_sock);
+    D("close client socket %d", client_sock);
 
     shutdown(client_sock, 0);
     close(client_sock);
@@ -336,7 +336,7 @@ void* http_client_thread(p_client_thread_param param)
     free(buff);
     free(param);
 
-    DBG("exit");
+    D("exit");
     return NULL;
 }
 
@@ -347,7 +347,7 @@ void* http_client_thread(p_client_thread_param param)
  */
 int http_server_wait_client_connect(p_xt_http http)
 {
-    DBG("accepting...");
+    D("accepting...");
 
 #ifdef NETWORK_IPV4
     struct sockaddr_in client_addr;
@@ -361,7 +361,7 @@ int http_server_wait_client_connect(p_xt_http http)
 
     if (client_sock < 0)
     {
-        ERR("accept fail, errno %d", errno);
+        E("accept fail, errno %d", errno);
         return -1;
     }
 
@@ -377,7 +377,7 @@ int http_server_wait_client_connect(p_xt_http http)
     inet6_ntoa_r(client_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
 #endif
 
-    DBG("accept client socket:%d addr:%s", client_sock, addr_str);
+    D("accept client socket:%d addr:%s", client_sock, addr_str);
 
     pthread_t tid;
 
@@ -385,11 +385,11 @@ int http_server_wait_client_connect(p_xt_http http)
 
     if (ret != 0)
     {
-        ERR("create thread fail, err:%d\n", ret);
+        E("create thread fail, E:%d\n", ret);
         return -1;
     }
 
-    DBG("create client thread");
+    D("create client thread");
     return 0;
 }
 
@@ -429,33 +429,33 @@ int http_server_create_listen_socket(unsigned short port)
 
     if (listen_sock == INVALID_SOCKET)
     {
-        ERR("create socket fail, errno %d", listen_sock);
+        E("create socket fail, errno:%d", listen_sock);
         return -1;
     }
 
-    DBG("create listen socket %d ok", listen_sock);
+    D("create listen socket:%d ok", listen_sock);
 
     int ret = bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
 
     if (ret != 0)
     {
         close(listen_sock);
-        ERR("bind socket fail, errno %d", errno);
+        E("bind socket fail, errno:%d", errno);
         return -2;
     }
 
-    DBG("bind socket ok");
+    D("bind socket ok");
 
     ret = listen(listen_sock, 1);
 
     if (ret != 0)
     {
         close(listen_sock);
-        ERR("listen socket fail, errno %d", errno);
+        E("listen socket fail, errno:%d", errno);
         return -3;
     }
 
-    DBG("listen socket %s:%d", addr_str, port);
+    D("listen socket %s:%d", addr_str, port);
     return listen_sock;
 }
 
@@ -466,14 +466,14 @@ int http_server_create_listen_socket(unsigned short port)
  */
 void* http_server_thread(p_xt_http http)
 {
-    DBG("running...");
+    D("running...");
 
     int listen_sock = http_server_create_listen_socket(http->port);
 
     if (listen_sock <= 0)
     {
-        ERR("create listen socket error");
-        ERR("exit");
+        E("create listen socket Eor");
+        E("exit");
         return NULL;
     }
 
@@ -488,7 +488,7 @@ void* http_server_thread(p_xt_http http)
 
     close(listen_sock);
 
-    DBG("exit");
+    D("exit");
     return NULL;
 }
 
@@ -517,10 +517,10 @@ int http_init(unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
 
     if (ret != 0)
     {
-        ERR("create thread fail, err:%d\n", ret);
+        E("create thread fail, E:%d\n", ret);
         return -2;
     }
 
-    DBG("ok");
+    D("ok");
     return 0;
 }

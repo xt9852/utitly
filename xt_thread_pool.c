@@ -14,7 +14,7 @@
  */
 void* thread_pool_thread(p_xt_thread_pool pool)
 {
-    DBG("begin");
+    D("begin");
 
     p_xt_thread_pool_task task;
 
@@ -36,11 +36,11 @@ void* thread_pool_thread(p_xt_thread_pool pool)
         }
         else
         {
-            ERR("get task null");
+            E("get task null");
         }
     }
 
-    DBG("exit");
+    D("exit");
     return NULL;
 }
 
@@ -81,12 +81,12 @@ int thread_pool_init(p_xt_thread_pool pool, unsigned int count)
 
         if (ret != 0)
         {
-            ERR("create thread fail, err:%d\n", ret);
+            E("create thread fail, E:%d\n", ret);
             return -3;
         }
     }
 
-    DBG("ok");
+    D("ok");
     return 0;
 }
 

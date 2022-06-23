@@ -138,7 +138,7 @@ int pinyin_init_res(char *res_type, int res_id)
 
     g_pinyin_malloc = false;
 
-    DBG("ok");
+    D("ok");
     return 0;
 }
 
@@ -151,7 +151,7 @@ int pinyin_init(const char *filename)
 {
     if (NULL == filename)
     {
-        DBG("%s filename is null");
+        D("%s filename is null");
         return -1;
     }
 
@@ -160,7 +160,7 @@ int pinyin_init(const char *filename)
 
     if (NULL == fp)
     {
-        DBG("open %s error %d", filename, GetLastError());
+        D("open file:%s error:%d", filename, GetLastError());
         return -1;
     }
 
@@ -182,7 +182,7 @@ int pinyin_init(const char *filename)
 
     g_pinyin_malloc = true;
 
-    DBG("ok");
+    D("ok");
     return 0;
 }
 

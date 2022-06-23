@@ -9,27 +9,32 @@
 #ifndef _XT_LOG_H_
 #define _XT_LOG_H_
 #include <stdio.h>
+#define FFL             __FILE__, __FUNCTION__, __LINE__                        ///< 源文件,函数名称,行号
 #ifdef _WINDOWS
 #include <windows.h>
 #include <process.h>
-#define close           closesocket             ///< 关闭端口
-#define sleep(n)        Sleep(n*1000)           ///< 等待1秒
-#define msleep(n)       Sleep(n)                ///< 等待1毫秒
-#define getpid()        _getpid()               ///< 得到进程ID
-#define gettid()        GetCurrentThreadId()    ///< 得到线程ID
-#define strncasecmp     strnicmp                ///< 不区分大小写的比较
-#define PATH_SEGM       '\\'                    ///< WINDOWS路径分割符
-#define D(l, ...)       log_write(l, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)        ///< 指定文件输出
-#define DBG(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, __VA_ARGS__)   ///< 调试
-#define MSG(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  __VA_ARGS__)   ///< 信息
-#define WAR(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  __VA_ARGS__)   ///< 警告
-#define ERR(...)        log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, __VA_ARGS__)   ///< 错误
+#define close           closesocket                                             ///< 关闭端口
+#define sleep(n)        Sleep(n*1000)                                           ///< 等待1秒
+#define msleep(n)       Sleep(n)                                                ///< 等待1毫秒
+#define getpid()        _getpid()                                               ///< 得到进程ID
+#define gettid()        GetCurrentThreadId()                                    ///< 得到线程ID
+#define strncasecmp     strnicmp                                                ///< 不区分大小写的比较
+#define PATH_SEGM       '\\'                                                    ///< WINDOWS路径分割符
+
+#define DD(log, ...)    log_write(log,    FFL, LOG_LEVEL_DEBUG, __VA_ARGS__)    ///< 调试,指定文件输出
+#define II(log, ...)    log_write(log,    FFL, LOG_LEVEL_INFO,  __VA_ARGS__)    ///< 信息,指定文件输出
+#define WW(log, ...)    log_write(log,    FFL, LOG_LEVEL_WARN,  __VA_ARGS__)    ///< 警告,指定文件输出
+#define EE(log, ...)    log_write(log,    FFL, LOG_LEVEL_ERROR, __VA_ARGS__)    ///< 错误,指定文件输出
+#define D(...)          log_write(&g_log, FFL, LOG_LEVEL_DEBUG, __VA_ARGS__)    ///< 调试
+#define I(...)          log_write(&g_log, FFL, LOG_LEVEL_INFO,  __VA_ARGS__)    ///< 信息
+#define W(...)          log_write(&g_log, FFL, LOG_LEVEL_WARN,  __VA_ARGS__)    ///< 警告
+#define E(...)          log_write(&g_log, FFL, LOG_LEVEL_ERROR, __VA_ARGS__)    ///< 错误
 #else
 #define PATH_SEGM       '/'                     ///< LINUX路径分割符
-#define DBG (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, ##args)        ///< 调试
-#define MSG (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_INFO,  ##args)        ///< 信息
-#define WAR (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_WARN,  ##args)        ///< 警告
-#define ERR (args...)   log_write(&g_log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_ERROR, ##args)        ///< 错误
+#define D (args...)     log_write(&g_log, FFL, LOG_LEVEL_DEBUG, ##args)         ///< 调试
+#define I (args...)     log_write(&g_log, FFL, LOG_LEVEL_INFO,  ##args)         ///< 信息
+#define W (args...)     log_write(&g_log, FFL, LOG_LEVEL_WARN,  ##args)         ///< 警告
+#define E (args...)     log_write(&g_log, FFL, LOG_LEVEL_ERROR, ##args)         ///< 错误
 #endif
 
 

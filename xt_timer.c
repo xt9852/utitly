@@ -28,7 +28,7 @@ int timer_check(p_xt_timer timer, void *param)
         {
             timer->cycle_next += timer->cycle_second;
 
-            DBG("触发定时器 name:%s now:%u next:%u", timer->name, now, timer->cycle_next);
+            D("触发定时器 name:%s now:%u next:%u", timer->name, now, timer->cycle_next);
 
             thread_pool_put(timer->thread_pool, timer->task.proc, timer->task.param);
         }
@@ -59,7 +59,7 @@ int timer_check(p_xt_timer timer, void *param)
             ((TIMER_CRON_HOUR   == timer->type) && ((mask&0x03) == 0x03)) ||    // 每时的min分sec秒执行任务
             ((TIMER_CRON_MINUTE == timer->type) && ((mask&0x01) == 0x01)))      // 每分的sec秒执行任务
         {
-            DBG("触发定时器 name:%s y:%d w:%d m:%d d:%d h:%d m:%d s:%d",
+            D("触发定时器 name:%s y:%d w:%d m:%d d:%d h:%d m:%d s:%d",
                  timer->name,
                  tm.tm_yday,
                  tm.tm_wday,
@@ -75,32 +75,32 @@ int timer_check(p_xt_timer timer, void *param)
             {
             case TIMER_CRON_YDAY:
                 {
-                    DBG("每年的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_yday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("每年的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_yday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_WDAY:
                 {
-                    DBG("每周的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_wday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("每周的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_wday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_YEAR:
                 {
-                    DBG("每年的第%d月第%d天的%d时%d分%d秒执行任务:%s", timer->cron_mon, timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("每年的第%d月第%d天的%d时%d分%d秒执行任务:%s", timer->cron_mon, timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_MON:
                 {
-                    DBG("每月的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("每月的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_DAY:
                 {
-                    DBG("每天的第%d时%d分%d秒执行任务:%s", timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("每天的第%d时%d分%d秒执行任务:%s", timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_HOUR:
                 {
-                    DBG("每时的第%d分%d秒执行任务:%s", timer->cron_min, timer->cron_sec, timer->name);
+                    D("每时的第%d分%d秒执行任务:%s", timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             }
@@ -117,7 +117,7 @@ int timer_check(p_xt_timer timer, void *param)
  */
 void* timer_thread(p_xt_timer_set set)
 {
-    DBG("begin");
+    D("begin");
 
     unsigned int now;
     unsigned int sec = 0;
@@ -135,12 +135,12 @@ void* timer_thread(p_xt_timer_set set)
 
         sec = now;
 
-        DBG("%u", now);
+        //D("%u", now);
 
         list_proc(&(set->timer_list), timer_check, (void*)now);
     }
 
-    DBG("exit");
+    D("exit");
     return NULL;
 }
 
@@ -175,11 +175,11 @@ int timer_init(p_xt_timer_set set)
 
     if (ret != 0)
     {
-        ERR("create thread fail, err:%d\n", ret);
+        E("create thread fail, E:%d\n", ret);
         return -3;
     }
 
-    DBG("ok");
+    D("ok");
     return 0;
 }
 

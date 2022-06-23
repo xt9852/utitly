@@ -76,7 +76,7 @@ int list_tail_push(p_xt_list list, void *data)
 
     pthread_mutex_lock(&(list->mutex));
 
-    DBG("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     if (0 == list->count)
     {
@@ -99,13 +99,13 @@ int list_tail_push(p_xt_list list, void *data)
 
         if (list->head <= list->tail)           // 头节点在尾节点前面
         {
-            DBG("add array old size:%d head:%d <= tail:%d", old_size, list->head, list->tail);
+            D("add array old size:%d head:%d <= tail:%d", old_size, list->head, list->tail);
             memcpy(list->data, old_data, SV * old_size);
-            DBG("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
+            D("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
         }
         else
         {
-            DBG("add array old size:%d head:%d > tail:%d", old_size, list->head, list->tail);
+            D("add array old size:%d head:%d > tail:%d", old_size, list->head, list->tail);
 
             int cnt = old_size + list->head;
             int head = list->size - cnt;
@@ -113,7 +113,7 @@ int list_tail_push(p_xt_list list, void *data)
             memcpy(&list->data[list->size - cnt], &old_data[list->head], SV * cnt);
             list->head = head;
 
-            DBG("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
+            D("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
         }
 
         free(old_data);
@@ -124,7 +124,7 @@ int list_tail_push(p_xt_list list, void *data)
 
     list->count++;
 
-    DBG("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     pthread_mutex_unlock(&(list->mutex));
 

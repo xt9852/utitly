@@ -99,7 +99,7 @@ int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
 	int pos_end_base64  = times * 4;
 	int len             = (times + (remain > 0 ? 1 : 0) ) * 4;
 
-    DBG("times:%d remain:%d padding:%d pos_end_data:%d pos_end_base64:%d len:%d",
+    D("times:%d remain:%d padding:%d pos_end_data:%d pos_end_base64:%d len:%d",
          times, remain, padding, pos_end_data, pos_end_base64, len);
 
     if (*base64_len <= len)
@@ -205,6 +205,6 @@ int base64_decode(const char *base64, int base64_len, char *data, int *data_len)
     *data_len = times * 3 - padding;
     data[*data_len] = '\0';
 
-    DBG("times:%d padding:%d len:%d", times, padding, *data_len);
+    D("times:%d padding:%d len:%d", times, padding, *data_len);
 	return 0;
 }

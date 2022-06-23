@@ -5,12 +5,12 @@
  *\version      1.0.0
  *\date         2022.06.08
  *\brief        doxygen注释实例,UTF-8(No BOM)
+ *\class        类名称
  *\note         注解
  *\attention    注意
  *\warning      警告
- *\class        类名称
  *\exception    异常说明
- *\example      doxygen_example.c doxygen注释实例
+ *\example      doxygen注释实例 doxygen_example.c
  */
 #include <stdio.h>
 

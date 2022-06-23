@@ -152,7 +152,7 @@ int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_inf
 
     if (0 == RegisterClassW(&wc))                       // 0-失败
     {
-        MessageBoxA(NULL, "RegisterClass fail", "error", MB_OK);
+        MessageBoxA(NULL, "RegisterClass fail", "Eor", MB_OK);
         return -2;
     }
 
@@ -169,7 +169,7 @@ int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_inf
 
     if (NULL == wnd)
     {
-        MessageBoxA(NULL, "CreateWindow fail", "error", MB_OK);
+        MessageBoxA(NULL, "CreateWindow fail", "Eor", MB_OK);
         return -3;
     }
 
@@ -181,7 +181,7 @@ int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_inf
 
     if (!Shell_NotifyIcon(NIM_ADD, &g_notify_data))
     {
-        MessageBoxA(NULL, "Shell_NotifyIcon fail", "error", MB_OK);
+        MessageBoxA(NULL, "Shell_NotifyIcon fail", "Eor", MB_OK);
         return -4;
     }
 

@@ -24,18 +24,18 @@ int utf8_unicode(const char *src, int src_len, short *dst, int *dst_len)
 {
     if (NULL == src || src_len <= 0 || NULL == dst || NULL == dst_len)
     {
-        ERR("null");
+        E("null");
         return -1;
     }
 
-    DBG("src:%s len:%d dst len:%d", src, src_len, *dst_len);
+    D("src:%s len:%d dst len:%d", src, src_len, *dst_len);
 
     // 转成unicode后的长度
     int len = MultiByteToWideChar(CP_UTF8, 0, src, src_len, NULL, 0);
 
     if (len >= *dst_len)
     {
-        ERR("too short");
+        E("too short");
         return -2;
     }
 
@@ -60,17 +60,17 @@ int unicode_ansi(const short *src, int src_len, char *dst, int *dst_len)
 {
     if (NULL == src || src_len <= 0 || NULL == dst || NULL == dst_len)
     {
-        ERR("null");
+        E("null");
         return -1;
     }
 
-    DBG("src len:%d dst len:%d", src_len, *dst_len);
+    D("src len:%d dst len:%d", src_len, *dst_len);
 
     int len = WideCharToMultiByte(CP_ACP, 0, src, src_len, 0, 0, 0, 0);
 
     if (len >= *dst_len)
     {
-        ERR("too short");
+        E("too short");
         return -2;
     }
 

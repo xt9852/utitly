@@ -123,7 +123,7 @@ void log_del_old(p_xt_log log, int timestamp)
 
     _unlink(filename);      // 删除旧文件
 
-    log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "unlink %s", filename);
+    DD(log, "unlink %s", filename);
 }
 
 /**
@@ -132,7 +132,7 @@ void log_del_old(p_xt_log log, int timestamp)
  */
 void* log_thread(p_xt_log log)
 {
-    log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "begin");
+    DD(log, "begin");
 
     bool reopen;
     unsigned int now;
@@ -152,7 +152,7 @@ void* log_thread(p_xt_log log)
 
         sec = now;
 
-        //log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "%u", now);
+        //DD(log, "%u", now);
 
         switch (log->cycle)
         {
@@ -211,7 +211,7 @@ void* log_thread(p_xt_log log)
         log_del_old(log, del);
     }
 
-    log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "exit");
+    DD(log, "exit");
     return NULL;
 }
 
@@ -229,14 +229,14 @@ void* log_thread(p_xt_log log)
  */
 int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log)
 {
-    if (NULL == log)
+    if (NULL == filename || NULL == log)
     {
         printf("%s|param is null\n", __FUNCTION__);
         return -1;
     }
 
     strcpy_s(log->filename, sizeof(log->filename), filename);
-    log->file  = NULL;
+    log->file   = NULL;
     log->level  = level;
     log->cycle  = cycle;
     log->backup = backup;
@@ -248,12 +248,13 @@ int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned in
 
     if (0 != ret)
     {
+        printf("%s|open file:%s error:%d\n", __FUNCTION__, filename, errno);
         return -2;
     }
 
     if (0 == backup)    // 不删除旧文件,就不需要创建线程
     {
-        log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "backup:%d", log->backup);
+        DD(log, "backup:%d", log->backup);
         return 0;
     }
 
@@ -268,11 +269,11 @@ int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned in
 
     if (ret != 0)
     {
-        log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "create thread fail, err:%d", ret);
+        EE(log, "create thread fail, E:%d", ret);
         return -3;
     }
 
-    log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "---------------------------------------------------ok");
+    DD(log, "格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容");
     return 0;
 }
 
@@ -285,7 +286,7 @@ void log_uninit(p_xt_log log)
 {
     if (NULL == log || NULL == log->file)
     {
-        log_write(log, __FILE__, __FUNCTION__, __LINE__, LOG_LEVEL_DEBUG, "log is null");
+        DD(log, "log is null");
         return;
     }
 
@@ -325,9 +326,9 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     ts = tv.tv_sec;
     localtime_s(&tm, &ts);
 
-    len = snprintf(buff, BUFF_SIZE, "%02d%02d%02d%03d|%d|%d|%c|%s:%d|%s|",
+    len = snprintf(buff, BUFF_SIZE, "%02d%02d%02d%03d|%d%c%d|%s:%d|%s|",
                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000,
-                   getpid(), gettid(), XT_LOG_LEVEL[level],
+                   getpid(), XT_LOG_LEVEL[level], gettid(),
                    file + log->root, line, func);
 
     len += vsnprintf(&buff[len], BUFF_SIZE - len, fmt, arg);

@@ -114,7 +114,7 @@ int exe_ico_get_data(int ico_id, char *data, int *data_len)
 
     exe_ico_update_data(group_data, group_size, data, data_len);
 
-    DBG("icon group len:%d", *data_len);
+    D("icon group len:%d", *data_len);
 
     int pos = *data_len;
 
@@ -122,7 +122,7 @@ int exe_ico_get_data(int ico_id, char *data, int *data_len)
     {
         exe_ico_get_item(i + 1, data + pos, data_len);
 
-        DBG("icon[%d] len:%d", i, *data_len);
+        D("icon[%d] len:%d", i, *data_len);
 
         pos += *data_len;
     }
