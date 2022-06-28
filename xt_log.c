@@ -7,51 +7,10 @@
  *\brief        日志模块实现,UTF-8(No BOM)
  */
 #include "xt_log.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <time.h>
+#include "xt_utitly.h"
 #include <pthread.h>
 
-#ifdef _WINDOWS
-#include <time.h>
-#include <stdint.h>
-#include <windows.h>
-
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
-#else
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
-#endif
-
-int gettimeofday(struct timeval *tv, void *tz)
-{
-    FILETIME ft;
-    uint64_t tmp = 0;
-
-    if (tv)
-    {
-        GetSystemTimeAsFileTime(&ft);
-
-        tmp = ft.dwHighDateTime;
-        tmp <<= 32;
-        tmp |= ft.dwLowDateTime;
-        tmp /= 10;  /*convert into microseconds*/
-        tmp -= DELTA_EPOCH_IN_MICROSECS;
-
-        tv->tv_sec = (long)(tmp / 1000000UL);
-        tv->tv_usec = (long)(tmp % 1000000UL);
-    }
-
-    return 0;
-}
-
-#else
-#include <sys/time.h>
-#endif
-
-#define BUFF_SIZE   10240                   ///< 日志缓冲区在小
+#define LOG_BUFF_SIZE   10240               ///< 日志缓冲区在小
 
 const static char XT_LOG_LEVEL[] = "DIWE";  ///< 日志级别字符
 
@@ -97,9 +56,9 @@ void log_set_filename(p_xt_log log, time_t timestamp, char *filename, int max)
  */
 int log_add_new(p_xt_log log, int timestamp, bool clean)
 {
-    char filename[512];
+    char filename[LOG_FILENAME_SIZE];
 
-    log_set_filename(log, timestamp, filename, sizeof(filename));
+    log_set_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
 
     if (NULL != log->file)
     {
@@ -117,9 +76,9 @@ int log_add_new(p_xt_log log, int timestamp, bool clean)
  */
 void log_del_old(p_xt_log log, int timestamp)
 {
-    char filename[512] = "";
+    char filename[LOG_FILENAME_SIZE] = "";
 
-    log_set_filename(log, timestamp, filename, sizeof(filename));
+    log_set_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
 
     _unlink(filename);      // 删除旧文件
 
@@ -217,46 +176,27 @@ void* log_thread(p_xt_log log)
 
 /**
  *\brief        初始化日志
- *\param[in]    filename    日志文件名前缀
- *\param[in]    level       日志级别(调试,信息,警告,错误)
- *\param[in]    cycle       日志文件保留周期(时,天,周)
- *\param[in]    backup      日志文件保留数量
- *\param[in]    clean       首次打开日志文件时是否清空文件内容
- *\param[in]    root        文件目录根位置
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log)
+int log_init(p_xt_log log)
 {
-    if (NULL == filename || NULL == log)
-    {
-        printf("%s|param is null\n", __FUNCTION__);
-        return -1;
-    }
-
-    strcpy_s(log->filename, sizeof(log->filename), filename);
-    log->file   = NULL;
-    log->level  = level;
-    log->cycle  = cycle;
-    log->backup = backup;
-    log->clean  = clean;
-    log->root   = root;
-    log->run    = false;
-
-    int ret = log_add_new(log, (int)time(NULL), clean);
+    int ret = log_add_new(log, (int)time(NULL), log->clean);
 
     if (0 != ret)
     {
-        printf("%s|open file:%s error:%d\n", __FUNCTION__, filename, errno);
+        printf("%s|open file:%s error:%d\n", __FUNCTION__, log->filename, errno);
         return -2;
     }
 
-    if (0 == backup)    // 不删除旧文件,就不需要创建线程
+    if (0 == log->backup)   // 不删除旧文件,就不需要创建线程
     {
         DD(log, "backup:%d", log->backup);
         return 0;
     }
+
+    g_xt_log = log;
 
     log->run = true;
 
@@ -275,6 +215,38 @@ int log_init(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned in
 
     DD(log, "格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容");
     return 0;
+}
+
+/**
+ *\brief        初始化日志
+ *\param[in]    filename    日志文件名前缀
+ *\param[in]    level       日志级别(调试,信息,警告,错误)
+ *\param[in]    cycle       日志文件保留周期(时,天,周)
+ *\param[in]    backup      日志文件保留数量
+ *\param[in]    clean       首次打开日志文件时是否清空文件内容
+ *\param[in]    root        文件目录根位置
+ *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
+ *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0           成功
+ */
+int log_init_ex(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log)
+{
+    if (NULL == filename || NULL == log)
+    {
+        printf("%s|param is null\n", __FUNCTION__);
+        return -1;
+    }
+
+    strncpy_s(log->filename, LOG_FILENAME_SIZE, filename, LOG_FILENAME_SIZE - 1);
+    log->file   = NULL;
+    log->level  = level;
+    log->cycle  = cycle;
+    log->backup = backup;
+    log->clean  = clean;
+    log->root   = root;
+    log->run    = false;
+
+    return log_init(log);
 }
 
 /**
@@ -314,7 +286,7 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     }
 
     int             len;
-    char            buff[BUFF_SIZE];
+    char            buf[LOG_BUFF_SIZE];
     time_t          ts;
     struct tm       tm;
     struct timeval  tv;
@@ -326,21 +298,21 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     ts = tv.tv_sec;
     localtime_s(&tm, &ts);
 
-    len = snprintf(buff, BUFF_SIZE, "%02d%02d%02d%03d|%d%c%d|%s:%d|%s|",
+    len = snprintf(buf, LOG_BUFF_SIZE, "%02d%02d%02d%03d|%d%c%d|%s:%d|%s|",
                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000,
                    getpid(), XT_LOG_LEVEL[level], gettid(),
                    file + log->root, line, func);
 
-    len += vsnprintf(&buff[len], BUFF_SIZE - len, fmt, arg);
+    len += vsnprintf(&buf[len], LOG_BUFF_SIZE - len, fmt, arg);
 
-    if (len >= BUFF_SIZE)
+    if (len >= LOG_BUFF_SIZE)
     {
-        len = (int)strlen(buff); // 当buff不够时,vsnprintf返回的是需要的长度
+        len = (int)strlen(buf); // 当buff不够时,vsnprintf返回的是需要的长度
     }
 
-    buff[len] = '\n';
+    buf[len] = '\n';
 
-    fwrite(buff, 1, len + 1, log->file); // 加1为多了个\n
+    fwrite(buf, 1, len + 1, log->file); // 加1为多了个\n
     fflush(log->file);
 
     va_end(arg);

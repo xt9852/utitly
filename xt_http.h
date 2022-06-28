@@ -17,6 +17,7 @@
 enum
 {
     HTTP_TYPE_HTML = 0, ///< 页面
+    HTTP_TYPE_XML,      ///< XML
     HTTP_TYPE_ICO,      ///< 图标
     HTTP_TYPE_GIF,      ///< gif图片
     HTTP_TYPE_PNG,      ///< png图片

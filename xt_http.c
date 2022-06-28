@@ -35,7 +35,7 @@ typedef struct _client_thread_param
 
 const static char *g_http_code[] = { "200 OK", "404 Not Found" };   ///< 状态码
 
-const static char *g_http_type[] = { "text/html", "image/x-icon", "image/gif", "image/png", "image/jpg", "image/jpeg" }; ///< 页面类型
+const static char *g_http_type[] = { "text/html", "text/xml", "image/x-icon", "image/gif", "image/png", "image/jpg", "image/jpeg" }; ///< 页面类型
 
 /**
  *\brief        十六进制字符转数字
@@ -331,7 +331,7 @@ void* http_client_thread(p_client_thread_param param)
     D("close client socket %d", client_sock);
 
     shutdown(client_sock, 0);
-    close(client_sock);
+    closesocket(client_sock);
 
     free(buff);
     free(param);
@@ -439,7 +439,7 @@ int http_server_create_listen_socket(unsigned short port)
 
     if (ret != 0)
     {
-        close(listen_sock);
+        closesocket(listen_sock);
         E("bind socket fail, errno:%d", errno);
         return -2;
     }
@@ -450,7 +450,7 @@ int http_server_create_listen_socket(unsigned short port)
 
     if (ret != 0)
     {
-        close(listen_sock);
+        closesocket(listen_sock);
         E("listen socket fail, errno:%d", errno);
         return -3;
     }
@@ -486,7 +486,7 @@ void* http_server_thread(p_xt_http http)
 
     shutdown(listen_sock, 0);
 
-    close(listen_sock);
+    closesocket(listen_sock);
 
     D("exit");
     return NULL;
