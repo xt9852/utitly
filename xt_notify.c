@@ -12,7 +12,7 @@
 #include "xt_notify.h"
 #include "xt_log.h"
 
-NOTIFYICONDATA      g_notify_data           = {0};      ///< 系统托盘数量
+NOTIFYICONDATAA     g_notify_data           = {0};      ///< 系统托盘数量
 HMENU               g_notify_menu           = NULL;     ///< 菜单
 notify_menu_info    g_notify_menu_data[64]  = {0};      ///< 菜单数据
 int                 g_notify_menu_count     = 0;        ///< 菜单数量
@@ -71,7 +71,7 @@ void notify_on_close(HWND wnd)
  */
 void notify_on_destory(HWND wnd)
 {
-    Shell_NotifyIcon(NIM_DELETE, &g_notify_data);
+    Shell_NotifyIconA(NIM_DELETE, &g_notify_data);
     PostQuitMessage(0);
 }
 
@@ -124,11 +124,12 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
  *\brief        设置操作系统任务栏右侧的托盘图标和菜单
  *\param[in]    instance        当前实例句柄
  *\param[in]    icon_id         icon_id图标ID
+ *\param[in]    title           窗体标题
  *\param[in]    menu_count      菜单数量
  *\param[in]    menu            菜单数据
  *\return       0               成功
  */
-int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_info menu[])
+int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_count, notify_menu_info menu[])
 {
     if (NULL == instance)
     {
@@ -146,26 +147,26 @@ int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_inf
     }
 
     // 窗体类
-    WNDCLASSW wc      = {0};
+    WNDCLASSA wc     = {0};
     wc.lpfnWndProc   = notify_window_msg_callback;      // 窗体消息处理函数
-    wc.lpszClassName = L"xt_sys_icon_class_name";       // 类名称
+    wc.lpszClassName = "xt_sys_icon_class_name";        // 类名称
 
-    if (0 == RegisterClassW(&wc))                       // 0-失败
+    if (0 == RegisterClassA(&wc))                       // 0-失败
     {
         MessageBoxA(NULL, "RegisterClass fail", "Eor", MB_OK);
         return -2;
     }
 
     // 创建窗体
-    HWND wnd = CreateWindow(wc.lpszClassName,           // 类名称
-                         L"title",                      // 窗体标题
-                         WS_OVERLAPPEDWINDOW,           // 窗体属性
-                         0, 0,                          // 窗体位置
-                         0, 0,                          // 窗体大小
-                         NULL,                          // 父窗句柄
-                         NULL,                          // 菜单句柄
-                         instance,                      // 实例句柄
-                         NULL);                         // 参数,给WM_CREATE的lParam
+    HWND wnd = CreateWindowA(wc.lpszClassName,          // 类名称
+                             title,                     // 窗体标题
+                             WS_OVERLAPPEDWINDOW,       // 窗体属性
+                             0, 0,                      // 窗体位置
+                             0, 0,                      // 窗体大小
+                             NULL,                      // 父窗句柄
+                             NULL,                      // 菜单句柄
+                             instance,                  // 实例句柄
+                             NULL);                     // 参数,给WM_CREATE的lParam
 
     if (NULL == wnd)
     {
@@ -174,12 +175,13 @@ int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_inf
     }
 
     // 系统托盘
-    g_notify_data.uFlags           = NIF_MESSAGE | NIF_ICON;                        // 消息,图标
+    g_notify_data.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;              // 消息,图标,信息
     g_notify_data.hWnd             = wnd;                                           // 指定接收托盘消息的句柄
     g_notify_data.hIcon            = LoadIcon(instance, MAKEINTRESOURCE(icon_id));  // 指定托盘图标
     g_notify_data.uCallbackMessage = RegisterWindowMessageA("WM_XT_NOTIFYICON");    // 系统托盘消息ID
+    strcpy_s(g_notify_data.szTip, sizeof(g_notify_data.szTip), title);              // 信息
 
-    if (!Shell_NotifyIcon(NIM_ADD, &g_notify_data))
+    if (!Shell_NotifyIconA(NIM_ADD, &g_notify_data))
     {
         MessageBoxA(NULL, "Shell_NotifyIcon fail", "Eor", MB_OK);
         return -4;

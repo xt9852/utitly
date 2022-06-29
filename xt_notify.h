@@ -25,10 +25,11 @@ typedef struct _notify_menu_info
  *\brief        设置操作系统任务栏右侧的托盘图标和菜单
  *\param[in]    instance        当前实例句柄
  *\param[in]    icon_id         icon_id图标ID
+ *\param[in]    title           窗体标题
  *\param[in]    menu_count      菜单数量
  *\param[in]    menu            菜单数据
  *\return       0               成功
  */
-int notify_init(HINSTANCE instance, int icon_id, int menu_count, notify_menu_info menu[]);
+int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_count, notify_menu_info menu[]);
 
 #endif
