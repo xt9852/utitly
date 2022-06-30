@@ -190,6 +190,8 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
         return -3;
     }
 
+    D("wnd:%x", wnd);
+
     char messagename[512];
     sprintf_s(messagename, sizeof(messagename), "%s_messagename", title);
     D(messagename);
