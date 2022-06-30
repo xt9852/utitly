@@ -32,4 +32,10 @@ typedef struct _notify_menu_info
  */
 int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_count, notify_menu_info menu[]);
 
+/**
+ *\brief        windows消息循环
+ *\return       0               成功
+ */
+int notify_loop_msg();
+
 #endif

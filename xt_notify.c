@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <pthread.h>
 #include "xt_notify.h"
 #include "xt_log.h"
 
@@ -26,14 +27,10 @@ int                 g_notify_menu_time      = 0;        ///< 菜单定时
  */
 void notify_on_timer(HWND wnd, WPARAM w)
 {
-    D("1 %d", g_notify_menu_time);
-
     if (g_notify_menu_time-- == 0)
     {
         SendMessage(wnd, WM_CANCELMODE, 0, 0);  // 关闭菜单
     }
-
-    D("2 %d", g_notify_menu_time);
 }
 
 /**
@@ -108,8 +105,6 @@ void notify_on_command(HWND wnd, WPARAM w)
  */
 LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM l)
 {
-    D("1 wnd:%x msg:%x", wnd, msg);
-
     if (msg == g_notify_data.uCallbackMessage)
     {
         notify_on_sys_msg(wnd, l);
@@ -123,13 +118,12 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
         case WM_DESTROY:    notify_on_destory(wnd);     return 0;
     }
 
-    D("2 wnd:%x msg:%x", wnd, msg);
-
     return DefWindowProc(wnd, msg, w, l);
 }
 
 /**
  *\brief        设置操作系统任务栏右侧的托盘图标和菜单
+ *\attention                    要添加消息循环
  *\param[in]    instance        当前实例句柄
  *\param[in]    icon_id         icon_id图标ID
  *\param[in]    title           窗体标题
@@ -154,53 +148,39 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
         AppendMenuW(g_notify_menu, MF_STRING, menu[i].id, menu[i].name);
     }
 
-    char classname[512];
-    sprintf_s(classname, sizeof(classname), "%s_classname", title);
-    D(classname);
-
     // 窗体类
     WNDCLASSA wc     = {0};
     wc.lpfnWndProc   = notify_window_msg_callback;      // 窗体消息处理函数
-    wc.lpszClassName = classname;                       // 类名称
+    wc.lpszClassName = title;                           // 类名称
 
     if (0 == RegisterClassA(&wc))                       // 0-失败
     {
-        E("RegisterClass %s fail", classname);
+        E("RegisterClass %s fail", title);
         return -2;
     }
 
-    char windowsname[512];
-    sprintf_s(windowsname, sizeof(windowsname), "%s_windowname", title);
-    D(windowsname);
-
     // 创建窗体
-    HWND wnd = CreateWindowA(classname,                 // 类名称
-                             windowsname,               // 窗体标题
+    HWND wnd = CreateWindowA(title,                     // 类名称
+                             title,                     // 窗体标题
                              WS_OVERLAPPEDWINDOW,       // 窗体属性
                              0, 0,                      // 窗体位置
                              0, 0,                      // 窗体大小
                              NULL,                      // 父窗句柄
                              NULL,                      // 菜单句柄
-                             instance,                  // 实例句柄
+                             NULL,                  // 实例句柄
                              NULL);                     // 参数,给WM_CREATE的lParam
 
     if (NULL == wnd)
     {
-        E("CreateWindow %s fail %d", windowsname, GetLastError());
+        E("CreateWindow %s fail", title);
         return -3;
     }
-
-    D("wnd:%x", wnd);
-
-    char messagename[512];
-    sprintf_s(messagename, sizeof(messagename), "%s_messagename", title);
-    D(messagename);
 
     // 系统托盘
     g_notify_data.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;              // 消息,图标,信息
     g_notify_data.hWnd             = wnd;                                           // 指定接收托盘消息的句柄
     g_notify_data.hIcon            = LoadIcon(instance, MAKEINTRESOURCE(icon_id));  // 指定托盘图标
-    g_notify_data.uCallbackMessage = RegisterWindowMessageA(messagename);           // 系统托盘消息ID
+    g_notify_data.uCallbackMessage = RegisterWindowMessageA(title);                 // 系统托盘消息ID
     strcpy_s(g_notify_data.szTip, sizeof(g_notify_data.szTip), title);              // 信息
 
     if (!Shell_NotifyIconA(NIM_ADD, &g_notify_data))
@@ -211,5 +191,25 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
 
     SetTimer(wnd, 0, 1000, NULL);
 
+    D("ok");
     return 0;
+}
+
+/**
+ *\brief        windows消息循环
+ *\return       0               成功
+ */
+int notify_loop_msg()
+{
+    // 消息体
+    MSG msg;
+
+    // 消息循环,从消息队列中取得消息,只到WM_QUIT时退出
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        TranslateMessage(&msg); // 将WM_KEYDOWN和WM_KEYUP转换为一条WM_CHAR消息
+        DispatchMessage(&msg);  // 分派消息到窗口,内部调用窗体消息处理回调函数
+    }
+
+    return msg.wParam;
 }
