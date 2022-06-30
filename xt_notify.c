@@ -26,12 +26,14 @@ int                 g_notify_menu_time      = 0;        ///< 菜单定时
  */
 void notify_on_timer(HWND wnd, WPARAM w)
 {
-    D("%d", g_notify_menu_time);
+    D("1 %d", g_notify_menu_time);
 
     if (g_notify_menu_time-- == 0)
     {
         SendMessage(wnd, WM_CANCELMODE, 0, 0);  // 关闭菜单
     }
+
+    D("2 %d", g_notify_menu_time);
 }
 
 /**
@@ -106,12 +108,12 @@ void notify_on_command(HWND wnd, WPARAM w)
  */
 LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM l)
 {
+    D("1 wnd:%x msg:%x", wnd, msg);
+
     if (msg == g_notify_data.uCallbackMessage)
     {
         notify_on_sys_msg(wnd, l);
     }
-
-    D("wnd:%d msg:%d", wnd, msg);
 
     switch(msg)
     {
@@ -120,6 +122,8 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
         case WM_CLOSE:      notify_on_close(wnd);       return 0;
         case WM_DESTROY:    notify_on_destory(wnd);     return 0;
     }
+
+    D("2 wnd:%x msg:%x", wnd, msg);
 
     return DefWindowProc(wnd, msg, w, l);
 }
@@ -157,7 +161,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
     // 窗体类
     WNDCLASSA wc     = {0};
     wc.lpfnWndProc   = notify_window_msg_callback;      // 窗体消息处理函数
-    wc.lpszClassName = title;//classname;                            // 类名称
+    wc.lpszClassName = classname;                       // 类名称
 
     if (0 == RegisterClassA(&wc))                       // 0-失败
     {
@@ -166,12 +170,12 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
     }
 
     char windowsname[512];
-    sprintf_s(windowsname, sizeof(windowsname), "%s_windowname", windowsname);
+    sprintf_s(windowsname, sizeof(windowsname), "%s_windowname", title);
     D(windowsname);
 
     // 创建窗体
-    HWND wnd = CreateWindowA(title,                 // 类名称
-                             title,               // 窗体标题
+    HWND wnd = CreateWindowA(classname,                 // 类名称
+                             windowsname,               // 窗体标题
                              WS_OVERLAPPEDWINDOW,       // 窗体属性
                              0, 0,                      // 窗体位置
                              0, 0,                      // 窗体大小
@@ -187,14 +191,14 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
     }
 
     char messagename[512];
-    sprintf_s(messagename, sizeof(messagename), "%s_messagename", messagename);
+    sprintf_s(messagename, sizeof(messagename), "%s_messagename", title);
     D(messagename);
 
     // 系统托盘
     g_notify_data.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;              // 消息,图标,信息
     g_notify_data.hWnd             = wnd;                                           // 指定接收托盘消息的句柄
     g_notify_data.hIcon            = LoadIcon(instance, MAKEINTRESOURCE(icon_id));  // 指定托盘图标
-    g_notify_data.uCallbackMessage = RegisterWindowMessageA(title);           // 系统托盘消息ID
+    g_notify_data.uCallbackMessage = RegisterWindowMessageA(messagename);           // 系统托盘消息ID
     strcpy_s(g_notify_data.szTip, sizeof(g_notify_data.szTip), title);              // 信息
 
     if (!Shell_NotifyIconA(NIM_ADD, &g_notify_data))
