@@ -228,7 +228,7 @@ int http_get_uri(const char *buff, char *uri, int uri_size)
 
     if (NULL == end)
     {
-        E("request uri:%s Eor", uri);
+        E("request uri:%s error", uri);
         return -1;
     }
 
@@ -472,7 +472,7 @@ void* http_server_thread(p_xt_http http)
 
     if (listen_sock <= 0)
     {
-        E("create listen socket Eor");
+        E("create listen socket error");
         E("exit");
         return NULL;
     }

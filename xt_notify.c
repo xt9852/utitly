@@ -26,6 +26,8 @@ int                 g_notify_menu_time      = 0;        ///< 菜单定时
  */
 void notify_on_timer(HWND wnd, WPARAM w)
 {
+    D("%d", g_notify_menu_time);
+
     if (g_notify_menu_time-- == 0)
     {
         SendMessage(wnd, WM_CANCELMODE, 0, 0);  // 关闭菜单
@@ -109,6 +111,8 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
         notify_on_sys_msg(wnd, l);
     }
 
+    D("wnd:%d msg:%d", wnd, msg);
+
     switch(msg)
     {
         case WM_COMMAND:    notify_on_command(wnd, w);  break;
@@ -131,7 +135,7 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
  */
 int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_count, notify_menu_info menu[])
 {
-    if (NULL == instance)
+    if (NULL == instance || NULL == title)
     {
         return -1;
     }
@@ -149,11 +153,11 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
     // 窗体类
     WNDCLASSA wc     = {0};
     wc.lpfnWndProc   = notify_window_msg_callback;      // 窗体消息处理函数
-    wc.lpszClassName = "xt_sys_icon_class_name";        // 类名称
+    wc.lpszClassName = title;                           // 类名称
 
     if (0 == RegisterClassA(&wc))                       // 0-失败
     {
-        MessageBoxA(NULL, "RegisterClass fail", "Eor", MB_OK);
+        MessageBoxA(NULL, "RegisterClass fail", "error", MB_OK);
         return -2;
     }
 
@@ -170,7 +174,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
 
     if (NULL == wnd)
     {
-        MessageBoxA(NULL, "CreateWindow fail", "Eor", MB_OK);
+        MessageBoxA(NULL, "CreateWindow fail", "error", MB_OK);
         return -3;
     }
 
@@ -178,12 +182,12 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
     g_notify_data.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;              // 消息,图标,信息
     g_notify_data.hWnd             = wnd;                                           // 指定接收托盘消息的句柄
     g_notify_data.hIcon            = LoadIcon(instance, MAKEINTRESOURCE(icon_id));  // 指定托盘图标
-    g_notify_data.uCallbackMessage = RegisterWindowMessageA("WM_XT_NOTIFYICON");    // 系统托盘消息ID
+    g_notify_data.uCallbackMessage = RegisterWindowMessageA(title);                 // 系统托盘消息ID
     strcpy_s(g_notify_data.szTip, sizeof(g_notify_data.szTip), title);              // 信息
 
     if (!Shell_NotifyIconA(NIM_ADD, &g_notify_data))
     {
-        MessageBoxA(NULL, "Shell_NotifyIcon fail", "Eor", MB_OK);
+        MessageBoxA(NULL, "Shell_NotifyIcon fail", "error", MB_OK);
         return -4;
     }
 
