@@ -137,11 +137,11 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
 {
     if (NULL == instance || NULL == title)
     {
+        E("param is null");
         return -1;
     }
 
-    g_notify_menu = CreatePopupMenu();
-
+    g_notify_menu       = CreatePopupMenu();
     g_notify_menu_count = menu_count;
 
     for (int i = 0; i < menu_count; i++)
@@ -150,20 +150,28 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
         AppendMenuW(g_notify_menu, MF_STRING, menu[i].id, menu[i].name);
     }
 
+    char classname[512];
+    sprintf_s(classname, sizeof(classname), "%s_classname", title);
+    D(classname);
+
     // 窗体类
     WNDCLASSA wc     = {0};
     wc.lpfnWndProc   = notify_window_msg_callback;      // 窗体消息处理函数
-    wc.lpszClassName = title;                           // 类名称
+    wc.lpszClassName = title;//classname;                            // 类名称
 
     if (0 == RegisterClassA(&wc))                       // 0-失败
     {
-        MessageBoxA(NULL, "RegisterClass fail", "error", MB_OK);
+        E("RegisterClass %s fail", classname);
         return -2;
     }
 
+    char windowsname[512];
+    sprintf_s(windowsname, sizeof(windowsname), "%s_windowname", windowsname);
+    D(windowsname);
+
     // 创建窗体
-    HWND wnd = CreateWindowA(wc.lpszClassName,          // 类名称
-                             title,                     // 窗体标题
+    HWND wnd = CreateWindowA(title,                 // 类名称
+                             title,               // 窗体标题
                              WS_OVERLAPPEDWINDOW,       // 窗体属性
                              0, 0,                      // 窗体位置
                              0, 0,                      // 窗体大小
@@ -174,20 +182,24 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
 
     if (NULL == wnd)
     {
-        MessageBoxA(NULL, "CreateWindow fail", "error", MB_OK);
+        E("CreateWindow %s fail %d", windowsname, GetLastError());
         return -3;
     }
+
+    char messagename[512];
+    sprintf_s(messagename, sizeof(messagename), "%s_messagename", messagename);
+    D(messagename);
 
     // 系统托盘
     g_notify_data.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;              // 消息,图标,信息
     g_notify_data.hWnd             = wnd;                                           // 指定接收托盘消息的句柄
     g_notify_data.hIcon            = LoadIcon(instance, MAKEINTRESOURCE(icon_id));  // 指定托盘图标
-    g_notify_data.uCallbackMessage = RegisterWindowMessageA(title);                 // 系统托盘消息ID
+    g_notify_data.uCallbackMessage = RegisterWindowMessageA(title);           // 系统托盘消息ID
     strcpy_s(g_notify_data.szTip, sizeof(g_notify_data.szTip), title);              // 信息
 
     if (!Shell_NotifyIconA(NIM_ADD, &g_notify_data))
     {
-        MessageBoxA(NULL, "Shell_NotifyIcon fail", "error", MB_OK);
+        E("Shell_NotifyIcon %s fail", title);
         return -4;
     }
 
