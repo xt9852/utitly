@@ -209,7 +209,7 @@ int log_init(p_xt_log log)
 
     if (ret != 0)
     {
-        EE(log, "create thread fail, E:%d", ret);
+        EE(log, "create thread fail, error:%d", ret);
         return -3;
     }
 

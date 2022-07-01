@@ -76,7 +76,7 @@ int list_tail_push(p_xt_list list, void *data)
 
     pthread_mutex_lock(&(list->mutex));
 
-    D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    //D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     if (0 == list->count)
     {
@@ -124,7 +124,7 @@ int list_tail_push(p_xt_list list, void *data)
 
     list->count++;
 
-    D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    //D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     pthread_mutex_unlock(&(list->mutex));
 
