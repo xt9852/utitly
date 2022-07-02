@@ -71,6 +71,7 @@ int uri_encode(const char *in, int in_len, char *out, int *out_len)
 {
     if (NULL == in || NULL == out || NULL == out_len || *out_len < in_len * 3)
     {
+        E("param null or buff too small");
         return -1;
     }
 
@@ -110,6 +111,7 @@ int uri_decode(char *in, int in_len, char *out, int *out_len)
 {
     if (NULL == in || NULL == out || NULL == out_len || *out_len < in_len)
     {
+        E("param null or buff too small");
         return -1;
     }
 
