@@ -1,4 +1,4 @@
-﻿/**
+/**
  *\copyright    XT Tech. Co., Ltd.
  *\file         xt_ssh2.c
  *\author       xt
@@ -112,6 +112,7 @@ int ssh_recv_data(p_xt_ssh ssh, char *data, unsigned int max)
 {
     int ret = (int)libssh2_channel_read(ssh->channel, data, max - 1);
     data[(ret > 0) ? ret : 0] = '\0';
+    D("%s len:%d", data, ret);
     return ret;
 }
 
@@ -121,15 +122,16 @@ int ssh_recv_data(p_xt_ssh ssh, char *data, unsigned int max)
  *\param[in]    cmd         命令字符串
  *\param[in]    cmd_len     命令字符串长度
  *\param[out]   buf         接收缓冲区
- *\param[out]   buf_len     输入接收缓冲区大小,接收到的数据长
+ *\param[out]   buf_size    接收缓冲区大小
  *\return       0           成功
  */
-int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf, unsigned int *buf_len)
+int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf, unsigned int buf_size)
 {
     int ret = 0;
 
     if (cmd_len > 0)
     {
+        D(cmd);
         ret = ssh_send_data(ssh, cmd, cmd_len);
     }
 
@@ -149,9 +151,9 @@ int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf,
 
     msleep(50);
 
-    *buf_len = ssh_recv_data(ssh, buf, *buf_len);
+    int len = ssh_recv_data(ssh, buf, buf_size);
 
-    ssh_callback(ssh, buf, *buf_len);
+    ssh_callback(ssh, buf, len);
 
     ssh->cmd_time = time(NULL);
 
@@ -293,8 +295,8 @@ void ssh_thread(p_xt_ssh ssh)
 
     D("channel open ok");
 
-    // pty虚拟终端,vanilla不带格式颜色
-    if (libssh2_channel_request_pty(channel, "vanilla")) // ansi
+    // pty虚拟终端,vanilla不带格式
+    if (libssh2_channel_request_pty(channel, "vanilla")) // ansi带格式
     {
         info = "channel pty fail";
         ssh_callback(ssh, info, strlen(info));
@@ -332,11 +334,7 @@ void ssh_thread(p_xt_ssh ssh)
     // 执行SSH初始命令
     for (int i = 0; i < ssh->cmd_count; i++)
     {
-        D("init cmd[%d/%d]=%s", i, ssh->cmd_count, ssh->cmd[i].str);
-
-        len = sizeof(buf);
-
-        ssh_send_cmd(ssh, ssh->cmd[i].str, (int)strlen(ssh->cmd[i].str), buf, &len);
+        ssh_send_cmd(ssh, ssh->cmd[i].str, (int)strlen(ssh->cmd[i].str), buf, sizeof(buf));
 
         msleep(ssh->cmd[i].sleep);
     }
@@ -348,7 +346,7 @@ void ssh_thread(p_xt_ssh ssh)
     {
         if ((time(NULL) - ssh->cmd_time) > 60)
         {
-            ssh_send_cmd(ssh, "", 0, buf, &len);
+            ssh_send_cmd(ssh, "", 0, buf, sizeof(buf));
         }
 
         msleep(100);
@@ -1790,7 +1788,10 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
         return -1;
     }
 
-    file_info file = { 0 };
+    D(local);
+    D(remote);
+
+    file_info file = {0};
     strcpy_s(file.filename, sizeof(file.filename) - 1, remote);
 
     FILE *fp = NULL;
@@ -1810,45 +1811,16 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
     fread(file.data, 1, file.len, fp);
     fclose(fp);
 
-    char cmd[1024];
+    char cmd[1024] = "rz -y";
     char buf[10240];
 
-    int recv_len = sizeof(buf);
-
-    int cmd_len = SP(cmd,  "rz -y %s %s", local,  remote);
-
-    int ret = ssh_send_cmd(ssh, cmd, cmd_len, buf, &recv_len);
+    int ret = ssh_send_cmd(ssh, cmd, strlen(cmd), buf, sizeof(buf));
 
     if (0 != ret)
     {
         E("send cmd:%s fail", buf);
         return -3;
     }
-
-    D(buf);
-
-    // 查找*号
-    char *ptr = strchr(buf, '*');
-
-    if (NULL == ptr)
-    {
-        E("recv data:%s don't have *");
-        return -4;
-    }
-
-    *ptr = '\0';
-
-    if (0 != strncmp(buf, cmd, strlen(cmd)) && (ptr = strstr(buf, "\r\n")) != NULL)
-    {
-        char *ptr1 = ptr + 3;
-        strcpy_s(ptr, sizeof(buf) - (ptr - buf) - 1, ptr1);
-    }
-
-    D(buf);
-
-    struct tm tm;
-    struct tm beg;
-    get_time(&beg);
 
     ret = zmodem_put(ssh, &file);
 
@@ -1860,27 +1832,17 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
         return -5;
     }
 
-    get_time(&tm);
-
-    char size[32];
-    format_data(file.len, size, sizeof(size) - 1);
-
-    int len = sprintf_s(buf, sizeof(buf) - 1,
-        "Starting zmodem transfer.Press Ctrl + C to cancel.\n"
-        "Transferring %s\n"
-        "%d-%02d-%02d %02d:%02d:%02d    %s    %d Second    %d Errors\n\n",
-        local,
-        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
-        size,
-        tm.tm_isdst, // milliseconds
-        ret);
-
-    D(buf);
-    ssh_callback(ssh, buf, len);
-
+    D("ok");
     return 0;
 }
 
+/**
+ *\brief        SSH的sz命令下载文件
+ *\param[in]    ssh         SSH数据
+ *\param[in]    remote      远端文件名
+ *\param[in]    local       本地文件名
+ *\return       0           成功
+ */
 int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
 {
     if (NULL == ssh || NULL == local || NULL == remote || !ssh->init)
@@ -1889,6 +1851,46 @@ int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
         return -1;
     }
 
+    D(local);
+    D(remote);
 
+    char cmd[1024];
+    char buf[10240];
+    file_info file = {0};
+
+    int len = SP(cmd, "sz %s", remote);
+
+    int ret = ssh_send_cmd(ssh, cmd, len, buf, sizeof(buf));
+
+    if (0 != ret)
+    {
+        E("send cmd:%s fail", buf);
+        return -2;
+    }
+
+    ret = zmodem_get(ssh, &file);
+
+    if (0 != ret)
+    {
+        free(file.data);
+        E("zmodem_get fail");
+        return -3;
+    }
+
+    FILE *fp = NULL;
+    fopen_s(&fp, local, "wb");
+
+    if (NULL == fp)
+    {
+        free(file.data);
+        E("open %s fail", local);
+        return -4;
+    }
+
+    fwrite(file.data, 1, file.len, fp);
+    fclose(fp);
+    free(file.data);
+
+    D("ok");
     return 0;
 }

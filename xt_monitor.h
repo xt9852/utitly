@@ -67,6 +67,7 @@ typedef struct _xt_monitor
 typedef struct _xt_monitor_event
 {
     char            obj_name[MNT_OBJNAME_SIZE];                         /// 对象名称,文件或目录名称
+    char            obj_oldname[MNT_OBJNAME_SIZE];                      /// 对象名称,文件或目录名称
     unsigned char   obj_type;                                           /// 对象类型
     unsigned char   cmd;                                                /// 监控事件
 

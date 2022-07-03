@@ -1,4 +1,4 @@
-﻿/**
+/**
  *\copyright    XT Tech. Co., Ltd.
  *\file         xt_ssh2.h
  *\author       xt
@@ -92,10 +92,10 @@ int ssh_init_ex(const char *addr, unsigned short port, const char *username, con
  *\param[in]    cmd         命令字符串
  *\param[in]    cmd_len     命令字符串长度
  *\param[out]   buf         接收缓冲区
- *\param[out]   buf_len     输入接收缓冲区大小,接收到的数据长
+ *\param[out]   buf_size    接收缓冲区大小
  *\return       0           成功
  */
-int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf, unsigned int *buf_len);
+int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf, unsigned int buf_size);
 
 /**
  *\brief        SSH的rz命令上传文件
@@ -105,5 +105,14 @@ int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf,
  *\return       0           成功
  */
 int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote);
+
+/**
+ *\brief        SSH的sz命令下载文件
+ *\param[in]    ssh         SSH数据
+ *\param[in]    remote      远端文件名
+ *\param[in]    local       本地文件名
+ *\return       0           成功
+ */
+int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local);
 
 #endif

@@ -1,4 +1,4 @@
-﻿/**
+/**
  *\copyright    XT Tech. Co., Ltd.
  *\file         xt_memory_pool.c
  *\author       xt

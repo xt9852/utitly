@@ -1,4 +1,4 @@
-﻿/**
+/**
  *\copyright    XT Tech. Co., Ltd.
  *\file         xt_monitor.c
  *\author       xt
@@ -22,6 +22,11 @@
  */
 int monitor_get_event_object(char *path, int path_len, int path_size, const char *name)
 {
+    if (0 == strncmp(name, "新建文件夹", 15))
+    {
+        return EVENT_OBJECT_DIR;
+    }
+
     strncpy_s(&(path[path_len]), path_size - path_len - 1, name, path_size - path_len - 2);
 
     DWORD attr = GetFileAttributesA(path);  // 得到文件属性
@@ -83,98 +88,6 @@ int monitor_blacklist(p_xt_monitor monitor, const char* txt)
 }
 
 /**
- *\brief        处理监控事件
- *\param[in]    monitor     监控数据
- *\param[in]    notify      通知事件
- *\return       0           成功
- */
-int monitor_proc_event(p_xt_monitor monitor, FILE_NOTIFY_INFORMATION *notify)
-{
-    int len;
-    int cmd;
-    int obj_type;
-    int path_len;
-    int last_cmd = 0;
-    int last_tick = 0;
-    char path[MNT_OBJNAME_SIZE];
-    char obj_name[MNT_OBJNAME_SIZE];
-    char obj_name_last[MNT_OBJNAME_SIZE];
-    p_xt_monitor_event event;
-
-    path_len = strlen(monitor->localpath);
-    strncpy_s(path, MNT_OBJNAME_SIZE, monitor->localpath, MNT_OBJNAME_SIZE - 1);
-
-    while (monitor->run)
-    {
-        cmd = EVENT_CMD_NULL;
-        len = MNT_OBJNAME_SIZE;
-        unicode_utf8(notify->FileName, wcslen(notify->FileName), obj_name, &len);
-        obj_type = monitor_get_event_object(path, path_len, MNT_OBJNAME_SIZE, obj_name);
-
-        D("name:%s type:%d", obj_name, obj_type);
-
-        switch (notify->Action)
-        {
-            case FILE_ACTION_ADDED: // 新建文件或目录
-            {
-                cmd = EVENT_CMD_CREATE;
-                break;
-            }
-            case FILE_ACTION_REMOVED: // 删除文件或目录
-            {
-                cmd = EVENT_CMD_DELETE;
-                break;
-            }
-            case FILE_ACTION_RENAMED_OLD_NAME: // 重命名,旧名
-            {
-                strncpy_s(obj_name_last, MNT_OBJNAME_SIZE, obj_name, MNT_OBJNAME_SIZE - 1);
-                break;
-            }
-            case FILE_ACTION_RENAMED_NEW_NAME: // 重命名,新名
-            {
-                cmd = EVENT_CMD_RENAME;
-                len = strlen(obj_name);
-                obj_name[len] = '|';
-                strncpy_s(obj_name + len + 1, MNT_OBJNAME_SIZE, obj_name_last, MNT_OBJNAME_SIZE - len - 2); // 格式:新名|旧名
-                break;
-            }
-            case FILE_ACTION_MODIFIED: // 修改文件或目录,同时可能会有多个修改命令
-            {
-                if ((obj_type == EVENT_OBJECT_FILE) && (last_cmd != EVENT_CMD_MODIFY || 0 != strcmp(obj_name_last, obj_name) || (GetTickCount() - last_tick) > 500))
-                {
-                    cmd = EVENT_CMD_MODIFY;
-                    strncpy_s(obj_name_last, MNT_OBJNAME_SIZE, obj_name, MNT_OBJNAME_SIZE - 1);
-                }
-                break;
-            }
-        }
-
-        if (EVENT_CMD_NULL != cmd && 0 == monitor_whitelist(monitor, obj_name) && 0 == monitor_blacklist(monitor, obj_name))
-        {
-            last_cmd = cmd;
-            last_tick = GetTickCount();
-            D("tick:%u obj:%d cmd:%u name:%s", last_tick, obj_type, last_cmd, obj_name);
-
-            memory_pool_get(monitor->pool, &event);
-            event->cmd        = cmd;
-            event->obj_type   = obj_type;
-            event->monitor_id = monitor->id;
-            strncpy_s(event->obj_name, MNT_OBJNAME_SIZE, obj_name, MNT_OBJNAME_SIZE - 1);
-            list_tail_push(monitor->event, event);
-        }
-
-        if (0 == notify->NextEntryOffset)
-        {
-            break;
-        }
-
-        notify = (FILE_NOTIFY_INFORMATION*)((char*)notify + notify->NextEntryOffset);
-    }
-
-    return 0;
-}
-
-/**
  *\brief        监控器线程
  *\param[in]    monitor     监控数据
  *\return                   空
@@ -183,10 +96,8 @@ void* monitor_thread(p_xt_monitor monitor)
 {
     D("begin");
 
-    char *path = monitor->localpath;
-
     // 打开目录,得到目录的句柄
-    HANDLE handle = CreateFileA(path,
+    HANDLE handle = CreateFileA(monitor->localpath,
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         NULL,
@@ -196,25 +107,42 @@ void* monitor_thread(p_xt_monitor monitor)
 
     if (handle == INVALID_HANDLE_VALUE)
     {
-        E("monit %s fail", path);
+        E("monit %s fail", monitor->localpath);
         return (void*)-1;
     }
 
-    D("monit %s ok", path);
+    D("monit %s ok", monitor->localpath);
+
+    int buf_len = 10 * 1024 * 1024;
+    char *buf = malloc(buf_len);
 
     int ret;
-    int len = 10 * 1024 * 1024;
-    char *buf = malloc(len);
+    int len;
+    int cmd;
+    int obj_type;
+    int path_len;
+    int last_cmd                       = 0;
+    unsigned int last_tick             = 0;
+    char path[MNT_OBJNAME_SIZE]        = "";
+    char obj_name[MNT_OBJNAME_SIZE]    = "";
+    char obj_oldname[MNT_OBJNAME_SIZE] = "";
+
+    p_xt_monitor_event event;
     FILE_NOTIFY_INFORMATION *notify;
+
+    path_len = strlen(monitor->localpath);
+    strcpy_s(path, MNT_OBJNAME_SIZE, monitor->localpath);
 
     while (monitor->run)
     {
+        D("ReadDirectoryChangesW");
+
         notify = (FILE_NOTIFY_INFORMATION*)buf;
 
-        // 设置监控类型,只有用UNICODE类型的函数
+        // 阻塞式,设置监控类型,只有用UNICODE类型的函数
         if (!ReadDirectoryChangesW(handle,
             notify,
-            len,
+            buf_len,
             true,
             FILE_NOTIFY_CHANGE_CREATION |
             FILE_NOTIFY_CHANGE_LAST_WRITE |
@@ -235,7 +163,84 @@ void* monitor_thread(p_xt_monitor monitor)
             continue;
         }
 
-        monitor_proc_event(monitor, notify);
+        while (monitor->run)
+        {
+            D("NextEntryOffset:%d", notify->NextEntryOffset);
+
+            cmd = EVENT_CMD_NULL;
+            len = MNT_OBJNAME_SIZE;
+
+            unicode_utf8(notify->FileName, notify->FileNameLength / 2, obj_name, &len);
+            obj_type = monitor_get_event_object(path, path_len, MNT_OBJNAME_SIZE, obj_name);
+
+            D("name:%s type:%d", obj_name, obj_type);
+
+            switch (notify->Action)
+            {
+                case FILE_ACTION_ADDED: // 新建文件或目录
+                {
+                    cmd = EVENT_CMD_CREATE;
+                    break;
+                }
+                case FILE_ACTION_REMOVED: // 删除文件或目录
+                {
+                    cmd = EVENT_CMD_DELETE;
+                    break;
+                }
+                case FILE_ACTION_RENAMED_OLD_NAME: // 重命名,旧名
+                {
+                    strncpy_s(obj_oldname, MNT_OBJNAME_SIZE, obj_name, MNT_OBJNAME_SIZE - 1);
+                    break;
+                }
+                case FILE_ACTION_RENAMED_NEW_NAME: // 重命名,新名
+                {
+                    cmd = EVENT_CMD_RENAME;
+                    break;
+                }
+                case FILE_ACTION_MODIFIED: // 修改文件,同时可能会有多个修改命令
+                {
+                    D("FILE_ACTION_MODIFIED newname:%s oldname:%s type:%d last_cmd:%d last_tick:%u",
+                    obj_name, obj_oldname, obj_type, last_cmd, last_tick);
+
+                    if (EVENT_CMD_MODIFY == last_cmd &&
+                        EVENT_OBJECT_FILE == obj_type &&
+                        0 == strcmp(obj_name, obj_oldname) &&
+                        (GetTickCount() - last_tick) < 500)
+                    {
+                        D("SAME");
+                    }
+                    else
+                    {
+                        cmd = EVENT_CMD_MODIFY;
+                        strncpy_s(obj_oldname, MNT_OBJNAME_SIZE, obj_name, MNT_OBJNAME_SIZE - 1);
+                    }
+                    break;
+                }
+            }
+
+            if (EVENT_CMD_NULL != cmd && 0 == monitor_whitelist(monitor, obj_name) && 0 == monitor_blacklist(monitor, obj_name))
+            {
+                last_cmd = cmd;
+                last_tick = GetTickCount();
+                D("send event tick:%u obj:%d cmd:%u name:%s", last_tick, obj_type, last_cmd, obj_name);
+
+                memory_pool_get(monitor->pool, &event);
+                event->cmd        = cmd;
+                event->obj_type   = obj_type;
+                event->monitor_id = monitor->id;
+                strncpy_s(event->obj_name, MNT_OBJNAME_SIZE, obj_name, MNT_OBJNAME_SIZE - 1);
+                strncpy_s(event->obj_oldname, MNT_OBJNAME_SIZE, obj_oldname, MNT_OBJNAME_SIZE - 1);
+                list_tail_push(monitor->event, event);
+            }
+
+            if (0 == notify->NextEntryOffset)
+            {
+                break;
+            }
+
+            notify = (FILE_NOTIFY_INFORMATION*)((char*)notify + notify->NextEntryOffset);
+        }
+
     }
 
     D("exit");
