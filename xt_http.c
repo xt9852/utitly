@@ -186,8 +186,8 @@ int http_get_arg(char *uri, p_xt_http_arg arg)
 
     for (i = 0; NULL != token; i++)
     {
-        arg->name[i] = token;
-        arg->name_len[i] = strlen(token);
+        arg->item[i].name = token;
+        arg->item[i].name_len = strlen(token);
 
         char *equ = strchr(token, '=');
 
@@ -208,10 +208,10 @@ int http_get_arg(char *uri, p_xt_http_arg arg)
             return -1;
         }
 
-        arg->data[i] = data;
-        arg->data_len[i] = len;
+        arg->item[i].data = data;
+        arg->item[i].data_len = len;
 
-        D("arg[%d] name:%s len:%u data:%s len:%u", i, arg->name[i], arg->name_len[i], data, len);
+        D("arg[%d] name:%s len:%u data:%s len:%u", i, arg->item[i].name, arg->item[i].name_len, data, len);
         token = strtok_s(NULL, "&", &beg);
     }
 

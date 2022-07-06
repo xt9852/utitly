@@ -26,28 +26,35 @@ enum
 };
 
 /// URL参数
+typedef struct _xt_http_arg_item
+{
+    const char     *name;                   ///< 参数名称
+    unsigned int    name_len;               ///< 参数名称长度
+
+    const char     *data;                   ///< 参数值
+    unsigned int    data_len;               ///< 参数值长度
+
+} xt_http_arg_item, *p_xt_http_arg_item;    ///< URL参数指针
+
+/// URL参数数组
 typedef struct _xt_http_arg
 {
-    unsigned int    count;              ///< 参数数量
+    unsigned int        count;              ///< 参数数量
 
-    const char     *name[ARG_SIZE];     ///< 参数名称
-    unsigned int    name_len[ARG_SIZE]; ///< 参数名称长度
+    xt_http_arg_item    item[ARG_SIZE];     ///< 参数
 
-    const char     *data[ARG_SIZE];     ///< 参数值
-    unsigned int    data_len[ARG_SIZE]; ///< 参数值长度
-
-} xt_http_arg, *p_xt_http_arg;          ///< URL参数指针
+} xt_http_arg, *p_xt_http_arg;              ///< URL参数数组指针
 
 /// 应答内容
 typedef struct _xt_http_content
 {
-    unsigned int    type;               ///< 内容类型
+    unsigned int        type;               ///< 内容类型
 
-    unsigned int    len;                ///< 内容数据长度
+    unsigned int        len;                ///< 内容数据长度
 
-    char           *data;               ///< 内容数据
+    char               *data;               ///< 内容数据
 
-} xt_http_content, *p_xt_http_content;  ///< URL参数指针
+} xt_http_content, *p_xt_http_content;      ///< URL参数指针
 
 /**
  *\brief        http回调函数
