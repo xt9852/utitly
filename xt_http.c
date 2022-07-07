@@ -272,7 +272,7 @@ int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_si
         return 1;
     }
 
-    char            uri[1024];
+    char            uri[10240];
     xt_http_arg     arg         = {0};
     xt_http_content content     = {HTTP_TYPE_HTML, buff_size, buff};
 
