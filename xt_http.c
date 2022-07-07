@@ -21,21 +21,36 @@
 /// 404时返回数据
 #define HTTP_FILE_404   "404"
 
-/// 十六进制字符
-const static char HEX_STR[] = "0123456789ABCDEF";
-
 /// 客户端线程参数
 typedef struct _client_thread_param
 {
-    int         client_sock;    ///< 客户端socket
+    int         client_sock;                    ///< 客户端socket
 
-    p_xt_http   http;           ///< http数据
+    p_xt_http   http;                           ///< http数据
 
 } client_thread_param, *p_client_thread_param;  ///< 客户端线程参数指针
 
-const static char *g_http_code[] = { "200 OK", "404 Not Found" };   ///< 状态码
+/// 十六进制字符
+const static char HEX_STR[] = "0123456789ABCDEF";
 
-const static char *g_http_type[] = { "text/html", "text/xml", "image/x-icon", "image/gif", "image/png", "image/jpg", "image/jpeg" }; ///< 页面类型
+/// 状态码
+const static char *g_http_code[] =
+{
+    "200 OK",
+    "404 Not Found"
+};
+
+/// 页面类型
+const static char *g_http_type[] =
+{
+    "text/html",
+    "text/xml",
+    "image/x-icon",
+    "image/gif",
+    "image/png",
+    "image/jpg",
+    "image/jpeg"
+};
 
 /**
  *\brief        十六进制字符转数字
@@ -162,81 +177,83 @@ int uri_decode(char *in, int in_len, char *out, int *out_len)
 
 /**
  *\brief        得到URI中的参数,/index.html?arg1=1&arg2=2
- *\param[in]    uri         URI地址
- *\param[out]   arg         URI的参数
+ *\param[out]   data        URI的参数
  *\return       0           成功
  */
-int http_get_arg(char *uri, p_xt_http_arg arg)
+int http_get_arg(p_xt_http_data data)
 {
-    char *beg = strchr(uri, '?');
+    char *arg = strchr(data->uri, '?');
 
-    if (NULL == beg)
+    if (NULL == arg)
     {
-        arg->count = 0;
+        data->arg_count = 0;
         return 0;
     }
 
-    *beg++ = '\0';  // 后移一位到参数
+    *arg++ = '\0';  // 后移一位到参数
 
     int i;
     int len;
-    char *data;
+    char *key;
+    char *value;
 
-    char *token = strtok_s(beg, "&", &beg);
+    key = strtok_s(arg, "&", &arg);
 
-    for (i = 0; NULL != token; i++)
+    for (i = 0; NULL != key; i++)
     {
-        arg->item[i].name = token;
-        arg->item[i].name_len = strlen(token);
+        value = strchr(key, '=');
 
-        char *equ = strchr(token, '=');
-
-        if (NULL == equ)
+        if (NULL == value)
         {
+            value = "";
             len = 0;
-            data = "";
         }
         else
         {
-            *equ++ = '\0';
-            data = equ;
-            len = strlen(data);
+            *value++ = '\0';
+            len = strlen(value);
         }
 
-        if (uri_decode(data, len, data, &len) != 0)
+        if (uri_decode(value, len, value, &len) != 0)   // 使用同一块内存
         {
             return -1;
         }
 
-        arg->item[i].data = data;
-        arg->item[i].data_len = len;
+        data->arg[i].key = key;
+        data->arg[i].value = value;
+        data->arg[i].value_len = len;
 
-        D("arg[%d] name:%s len:%u data:%s len:%u", i, arg->item[i].name, arg->item[i].name_len, data, len);
-        token = strtok_s(NULL, "&", &beg);
+        key = strtok_s(NULL, "&", &arg);
+
+        D("key[%d]:%s len:%u value:%s", i, data->arg[i].key, len, value);
     }
 
-    arg->count = i;
+    data->arg_count = i;
     return 0;
 }
 
 /**
  *\brief        得到URI
- *\param[in]    buff        数据包
- *\param[out]   uri         URI地址
- *\param[in]    uri_size    URI地址缓冲区大小
+ *\param[in]    buf         数据包
+ *\param[in]    buf_size    数据包缓冲区大小
+ *\param[out]   data        HTTP数据
  *\return       0           成功
  */
-int http_get_uri(const char *buff, char *uri, int uri_size)
+int http_get_uri(char *buf, int buf_size, p_xt_http_data data)
 {
-    char *end = strchr(buff + 4, ' ');
+    data->uri = buf + 4;
+
+    char *end = strchr(data->uri, ' '); // GET /torrent-list?torrent=*** HTTP/1.1
 
     if (NULL == end)
     {
-        E("request uri:%s error", uri);
+        E("dont have ' '");
         return -1;
     }
 
-    strncpy_s(uri, uri_size, buff + 4, end - buff - 4);
+    *end = '\0';
+    data->content = end + 1;
+    data->len = buf_size - (end - buf);
 
     return 0;
 }
@@ -245,73 +262,73 @@ int http_get_uri(const char *buff, char *uri, int uri_size)
  *\brief        处理客户端的请求
  *\param[in]    http            http服务数据
  *\param[in]    client_sock     客户端socket
- *\param[in]    buff            数据缓冲区
- *\param[in]    buff_size       数据缓冲区大小
+ *\param[in]    buf             数据缓冲区
+ *\param[in]    buf_size        数据缓冲区大小
  *\return       0               成功
  */
-int http_client_request(p_xt_http http, int client_sock, char *buff, int buff_size)
+int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size)
 {
-    int data_len = recv(client_sock, buff, buff_size, 0);
+    int len = recv(client_sock, buf, buf_size, 0);
 
-    if (data_len < 0)
+    if (len < 0)
     {
         E("recv failed, errno %d", errno);
         return -1;
     }
-    else if (data_len == 0) // Connection closed
+    else if (len == 0) // Connection closed
     {
         D("connection closed");
         return -2;
     }
 
-    buff[data_len] = 0;
+    buf[len] = 0;
 
-    if (0 != strncmp(buff, "GET", 3))
+    if (0 != strncmp(buf, "GET", 3))
     {
-        E("request is not GET");
+        E("not GET");
         return 1;
     }
 
-    char            uri[10240];
-    xt_http_arg     arg         = {0};
-    xt_http_content content     = {HTTP_TYPE_HTML, buff_size, buff};
+    xt_http_data data = {0};
 
-    int ret = http_get_uri(buff, uri, sizeof(uri));
+    int ret = http_get_uri(buf, buf_size, &data);
 
     if (0 != ret)
     {
+        E("http_get_uri fail");
         return -3;
     }
 
-    D("sock:%d recv:%d uri:%s", client_sock, data_len, uri);
+    D("sock:%d recv:%d uri:%s", client_sock, len, data.uri);
 
-    ret = http_get_arg(uri, &arg);
+    ret = http_get_arg(&data);
 
     if (0 != ret)
     {
+        E("http_get_arg fail");
         return -4;
     }
 
-    ret = http->proc(uri, &arg, &content);
+    ret = http->proc(&data);
 
-    D("call http callback end ret:%d", ret);
+    D("callback ret:%d", ret);
 
     if (0 != ret)
     {
         ret = 1;
-        content.data = HTTP_FILE_404;
-        content.type = HTTP_TYPE_HTML;
-        content.len = sizeof(HTTP_FILE_404) - 1;
+        data.content = HTTP_FILE_404;
+        data.type = HTTP_TYPE_HTML;
+        data.len = sizeof(HTTP_FILE_404) - 1;
     }
 
     char head[128];
-    ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[content.type], content.len);
+    ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[data.type], data.len);
 
-    ret = send(client_sock, head, ret, 0);                  // 发送头部
+    ret = send(client_sock, head, ret, 0);              // 发送头部
     D("send head len:%d", ret);
 
-    ret = send(client_sock, content.data, content.len, 0);  // 发送内容
-    D("send content len:%d", ret);
+    ret = send(client_sock, data.content, data.len, 0); // 发送内容
+    D("send data len:%d", ret);
 
     //D("\n%s", head);
     return 0;
@@ -326,16 +343,16 @@ void* http_client_thread(p_client_thread_param param)
 {
     D("running...");
 
-    int client_sock = param->client_sock;
-    int buff_size = 10*1024*1024;
-    char *buff = malloc(buff_size);
+    int   sock = param->client_sock;
+    int   size = 10*1024*1024;
+    char *buff = malloc(size);
 
-    while (http_client_request(param->http, client_sock, buff, buff_size) >= 0);
+    while (http_client_request(param->http, sock, buff, size) >= 0);
 
-    D("close client socket %d", client_sock);
+    D("close client socket %d", sock);
 
-    shutdown(client_sock, 0);
-    closesocket(client_sock);
+    shutdown(sock, 0);
+    closesocket(sock);
 
     free(buff);
     free(param);

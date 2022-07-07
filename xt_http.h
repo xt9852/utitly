@@ -16,54 +16,49 @@
 /// 页面类型
 enum
 {
-    HTTP_TYPE_HTML = 0, ///< 页面
-    HTTP_TYPE_XML,      ///< XML
-    HTTP_TYPE_ICO,      ///< 图标
-    HTTP_TYPE_GIF,      ///< gif图片
-    HTTP_TYPE_PNG,      ///< png图片
-    HTTP_TYPE_JPG,      ///< jpg图片
-    HTTP_TYPE_JPEG      ///< jpeg图片
+    HTTP_TYPE_HTML = 0,                     ///< 页面
+    HTTP_TYPE_XML,                          ///< XML
+    HTTP_TYPE_ICO,                          ///< 图标
+    HTTP_TYPE_GIF,                          ///< gif图片
+    HTTP_TYPE_PNG,                          ///< png图片
+    HTTP_TYPE_JPG,                          ///< jpg图片
+    HTTP_TYPE_JPEG                          ///< jpeg图片
 };
 
 /// URL参数
-typedef struct _xt_http_arg_item
-{
-    const char     *name;                   ///< 参数名称
-    unsigned int    name_len;               ///< 参数名称长度
-
-    const char     *data;                   ///< 参数值
-    unsigned int    data_len;               ///< 参数值长度
-
-} xt_http_arg_item, *p_xt_http_arg_item;    ///< URL参数指针
-
-/// URL参数数组
 typedef struct _xt_http_arg
 {
-    unsigned int        count;              ///< 参数数量
+    const char     *key;                    ///< 参数名称
 
-    xt_http_arg_item    item[ARG_SIZE];     ///< 参数
+    const char     *value;                  ///< 参数值
+    unsigned int    value_len;              ///< 参数值长度
 
-} xt_http_arg, *p_xt_http_arg;              ///< URL参数数组指针
+} xt_http_arg, *p_xt_http_arg;              ///< URL参数指针
 
-/// 应答内容
-typedef struct _xt_http_content
+/// HTTP数据
+typedef struct _xt_http_data
 {
+    const char          *uri;               ///< URI地址
+    
+    xt_http_arg         arg[ARG_SIZE];      ///< 参数
+
+    unsigned int        arg_count;          ///< 参数数量
+
     unsigned int        type;               ///< 内容类型
 
-    unsigned int        len;                ///< 内容数据长度
+    unsigned int        len;                ///< 输入数据缓冲区大小,输出内容数据长度
 
-    char               *data;               ///< 内容数据
+    char               *content;            ///< 内容数据
 
-} xt_http_content, *p_xt_http_content;      ///< URL参数指针
+} xt_http_data, *p_xt_http_data;            ///< HTTP数据指针
 
 /**
  *\brief        http回调函数
  *\param[in]    uri             URI地址
- *\param[in]    arg             URI的参数,参数使用的是conten.data指向的内存
- *\param[out]   content         返回内容
+ *\param[out]   data            HTTP的数据
  *\return       200             成功
  */
-typedef int (*XT_HTTP_CALLBACK)(const char *uri, const p_xt_http_arg arg, p_xt_http_content content);
+typedef int (*XT_HTTP_CALLBACK)(const p_xt_http_data data);
 
 /// HTTP服务数据
 typedef struct _xt_http
