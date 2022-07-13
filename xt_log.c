@@ -127,12 +127,12 @@ void* log_thread(p_xt_log log)
             }
             case LOG_CYCLE_DAY:
             {
-                reopen = ((now % 86400) == 0);
+                reopen = (((now + 28800) % 86400) == 0);
                 break;
             }
             case LOG_CYCLE_WEEK:
             {
-                reopen = ((now % 604800) == 0);
+                reopen = (((now + 28800) % 604800) == 0);
                 break;
             }
         }
