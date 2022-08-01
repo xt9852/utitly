@@ -31,12 +31,12 @@ void log_set_filename(p_xt_log log, time_t timestamp, char *filename, int max)
     {
         case LOG_CYCLE_MINUTE:
         {
-            snprintf(filename, max, "%s.%d%02d%02d-%02d%02d.txt", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
+            snprintf(filename, max, "%s.%d%02d%02d%02d%02d.txt", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
             break;
         }
         case LOG_CYCLE_HOUR:
         {
-            snprintf(filename, max, "%s.%d%02d%02d-%02d.txt", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour);
+            snprintf(filename, max, "%s.%d%02d%02d%02d.txt", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour);
             break;
         }
         default:
