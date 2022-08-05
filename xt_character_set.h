@@ -39,4 +39,14 @@ int unicode_ansi(const short *src, int src_len, char *dst, int *dst_len);
  */
 int unicode_utf8(const short *src, int src_len, char *dst, int *dst_len);
 
+/**
+ *\brief        将ansi转成utf8
+ *\param[in]    src         源串
+ *\param[in]    src_len     源串长
+ *\param[out]   dst         目标串
+ *\param[out]   dst_len     目标串最大长,目标串长
+ *\return       0           成功
+ */
+int ansi_utf8(const char *src, int src_len, char *dst, int *dst_len);
+
 #endif
