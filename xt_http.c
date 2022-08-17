@@ -10,10 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include "xt_http.h"
-
-/// 使用IPV4
-#define NETWORK_IPV4
 
 /// 请求头
 #define HTTP_HEAD       "HTTP/1.1 %s\nContent-Type: %s\nContent-Length: %d\n\n"
@@ -354,6 +353,8 @@ void* http_client_thread(p_client_thread_param param)
     shutdown(sock, 0);
     closesocket(sock);
 
+    D("free param");
+
     free(buff);
     free(param);
 
@@ -370,15 +371,23 @@ int http_server_wait_client_connect(p_xt_http http)
 {
     D("accepting...");
 
-#ifdef NETWORK_IPV4
-    struct sockaddr_in client_addr;
-#else
-    struct sockaddr_in6 client_addr;
-#endif
+    int client_sock;
+    char addr_str[64];
 
-    int addr_len = sizeof(client_addr);
-
-    int client_sock = accept(http->listen_sock, (struct sockaddr *)&client_addr, &addr_len);
+    if (http->ipv4)
+    {
+        struct sockaddr_in client_addr;
+        int addr_len = sizeof(client_addr);
+        client_sock = accept(http->listen_sock, (struct sockaddr *)&client_addr, &addr_len);
+        inet_ntop(AF_INET, &client_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+    }
+    else
+    {
+        struct sockaddr_in6 client_addr;
+        int addr_len = sizeof(client_addr);
+        client_sock = accept(http->listen_sock, (struct sockaddr *)&client_addr, &addr_len);
+        inet_ntop(AF_INET6, &client_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+    }
 
     if (client_sock < 0)
     {
@@ -386,19 +395,11 @@ int http_server_wait_client_connect(p_xt_http http)
         return -1;
     }
 
+    D("accept client socket:%d ip:%s", client_sock, addr_str);
+
     p_client_thread_param param = (p_client_thread_param)malloc(sizeof(client_thread_param));
     param->client_sock = client_sock;
     param->http = http;
-
-    char addr_str[64];
-
-#ifdef NETWORK_IPV4
-    strcpy_s(addr_str, sizeof(addr_str), inet_ntoa(client_addr.sin_addr));
-#else
-    inet6_ntoa_r(client_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
-#endif
-
-    D("accept client socket:%d addr:%s", client_sock, addr_str);
 
     pthread_t tid;
 
@@ -416,47 +417,41 @@ int http_server_wait_client_connect(p_xt_http http)
 
 /**
  *\brief        创建监听socket
- *\param[in]    port            端口
+ *\param[in]    http            http服务数据
  *\return       0               成功
  */
-int http_server_create_listen_socket(unsigned short port)
+int http_server_create_listen_socket(p_xt_http http)
 {
-    int addr_family;
-    int ip_protocol;
-    char addr_str[32];
-
+    int ret = 0;
     WSADATA wsa = {0};
 	WSAStartup(MAKEWORD(2, 0), &wsa);
 
-#ifdef NETWORK_IPV4
-    addr_family = AF_INET;
-    ip_protocol = IPPROTO_IP;
-    struct sockaddr_in listen_addr;
-    listen_addr.sin_family = AF_INET;
-    listen_addr.sin_port = htons(port);
-    listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    strcpy_s(addr_str, sizeof(addr_str), inet_ntoa(listen_addr.sin_addr));
-#else
-    addr_family = AF_INET6;
-    ip_protocol = IPPROTO_IPV6;
-    struct sockaddr_in6 listen_addr;
-    listen_addr.sin6_family = AF_INET6;
-    listen_addr.sin6_port = htons(port);
-    bzero(&listen_addr.sin6_addr.un, sizeof(listen_addr.sin6_addr.un));
-    inet6_ntoa_r(listen_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
-#endif
-
-    int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
+    int listen_sock = socket(http->ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
 
     if (listen_sock == INVALID_SOCKET)
     {
-        E("create socket fail, errno:%d", listen_sock);
+        E("create socket fail, errno:%d errno:%d", listen_sock, GetLastError());
         return -1;
     }
 
-    D("create listen socket:%d ok", listen_sock);
+    D("create socket %d", listen_sock);
 
-    int ret = bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
+    if (http->ipv4)
+    {
+        struct sockaddr_in listen_addr;
+        listen_addr.sin_family = AF_INET;
+        listen_addr.sin_port = htons(http->port);
+        inet_pton(AF_INET, http->ip, &listen_addr.sin_addr);
+        ret = bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
+    }
+    else
+    {
+        struct sockaddr_in6 listen_addr;
+        listen_addr.sin6_family = AF_INET6;
+        listen_addr.sin6_port = htons(http->port);
+        inet_pton(AF_INET6, http->ip, &listen_addr.sin6_addr);
+        ret = bind(listen_sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
+    }
 
     if (ret != 0)
     {
@@ -465,7 +460,7 @@ int http_server_create_listen_socket(unsigned short port)
         return -2;
     }
 
-    D("bind socket ok");
+    D("bind   socket %s", http->ipv4 ? "ipv4" : "ipv6");
 
     ret = listen(listen_sock, 1);
 
@@ -476,8 +471,10 @@ int http_server_create_listen_socket(unsigned short port)
         return -3;
     }
 
-    D("listen socket %s:%d", addr_str, port);
-    return listen_sock;
+    http->listen_sock = listen_sock;
+
+    D("listen socket %s:%d", http->ip, http->port);
+    return 0;
 }
 
 /**
@@ -489,25 +486,22 @@ void* http_server_thread(p_xt_http http)
 {
     D("running...");
 
-    int listen_sock = http_server_create_listen_socket(http->port);
+    int ret = http_server_create_listen_socket(http);
 
-    if (listen_sock <= 0)
+    if (0 != ret)
     {
         E("create listen socket error");
         E("exit");
         return NULL;
     }
 
-    http->listen_sock = listen_sock;
-
     while (http->run)
     {
         http_server_wait_client_connect(http);
     }
 
-    shutdown(listen_sock, 0);
-
-    closesocket(listen_sock);
+    shutdown(http->listen_sock, 0);
+    closesocket(http->listen_sock);
 
     D("exit");
     return NULL;
@@ -515,15 +509,17 @@ void* http_server_thread(p_xt_http http)
 
 /**
  *\brief        初始化http
+ *\param[in]    ip              地址
  *\param[in]    port            监听端口
+ *\param[in]    ipv4            是否是IPV4
  *\param[in]    proc            处理请求回调
  *\param[in]    http            服务数据
  *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0               成功
  */
-int http_init(unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
+int http_init(const char *ip, unsigned short port, bool ipv4, XT_HTTP_CALLBACK proc, p_xt_http http)
 {
-    if (NULL == http)
+    if (NULL == ip || NULL == http)
     {
         return -1;
     }
@@ -531,6 +527,8 @@ int http_init(unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
     http->run  = true;
     http->port = port;
     http->proc = proc;
+    http->ipv4 = ipv4;
+    strcpy_s(http->ip, sizeof(http->ip), ip);
 
     pthread_t tid;
 

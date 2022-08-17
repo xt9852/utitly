@@ -28,18 +28,18 @@ enum
 /// URL参数
 typedef struct _xt_http_arg
 {
-    const char     *key;                    ///< 参数名称
+    const char         *key;                ///< 参数名称
 
-    const char     *value;                  ///< 参数值
-    unsigned int    value_len;              ///< 参数值长度
+    const char         *value;              ///< 参数值
+    unsigned int        value_len;          ///< 参数值长度
 
 } xt_http_arg, *p_xt_http_arg;              ///< URL参数指针
 
 /// HTTP数据
 typedef struct _xt_http_data
 {
-    const char          *uri;               ///< URI地址
-    
+    const char         *uri;                ///< URI地址
+
     xt_http_arg         arg[ARG_SIZE];      ///< 参数
 
     unsigned int        arg_count;          ///< 参数数量
@@ -63,25 +63,31 @@ typedef int (*XT_HTTP_CALLBACK)(const p_xt_http_data data);
 /// HTTP服务数据
 typedef struct _xt_http
 {
-    bool                run;            ///< 服务线程是否运行
+    bool                run;                ///< 服务线程是否运行
 
-    unsigned short      port;           ///< HTTP端口
+    char                ip[64];             ///< IP地址
 
-    XT_HTTP_CALLBACK    proc;           ///< HTTP回调函数
+    unsigned short      port;               ///< 端口
 
-    int                 listen_sock;    ///< 临听socket
+    bool                ipv4;               ///< IPV4
 
-} xt_http, *p_xt_http;                  ///< HTTP服务数据指针
+    XT_HTTP_CALLBACK    proc;               ///< HTTP回调函数
+
+    int                 listen_sock;        ///< 临听socket
+
+} xt_http, *p_xt_http;                      ///< HTTP服务数据指针
 
 /**
  *\brief        初始化http
+ *\param[in]    ip              地址
  *\param[in]    port            监听端口
+ *\param[in]    ipv4            是否是IPV4
  *\param[in]    proc            处理请求回调
- *\param[in]    http            服务数据,需要run, port, proc
+ *\param[in]    http            服务数据
  *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0               成功
  */
-int http_init(unsigned short port, XT_HTTP_CALLBACK callback, p_xt_http http);
+int http_init(const char *ip, unsigned short port, bool ipv4, XT_HTTP_CALLBACK proc, p_xt_http http);
 
 /**
  *\brief        URI编码
