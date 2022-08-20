@@ -511,13 +511,12 @@ void* http_server_thread(p_xt_http http)
  *\brief        初始化http
  *\param[in]    ip              地址
  *\param[in]    port            监听端口
- *\param[in]    ipv4            是否是IPV4
  *\param[in]    proc            处理请求回调
  *\param[in]    http            服务数据
  *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0               成功
  */
-int http_init(const char *ip, unsigned short port, bool ipv4, XT_HTTP_CALLBACK proc, p_xt_http http)
+int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
 {
     if (NULL == ip || NULL == http)
     {
@@ -527,7 +526,7 @@ int http_init(const char *ip, unsigned short port, bool ipv4, XT_HTTP_CALLBACK p
     http->run  = true;
     http->port = port;
     http->proc = proc;
-    http->ipv4 = ipv4;
+    http->ipv4 = (NULL != strchr(ip, '.'));
     strcpy_s(http->ip, sizeof(http->ip), ip);
 
     pthread_t tid;
