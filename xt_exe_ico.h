@@ -17,6 +17,6 @@
  *\param[out]   data_len        图标数据长
  *\return       0               成功
  */
-int exe_ico_get_data(int ico_id, char *data, int *data_len);
+int exe_ico_get_data(unsigned int ico_id, unsigned char *data, unsigned int *data_len);
 
 #endif
