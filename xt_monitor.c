@@ -325,7 +325,7 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
 
     if (error != 0)
     {
-        E(log, "create thread fail, error:%d", error);
+        E("create thread fail, error:%d", error);
         return -6;
     }
 
