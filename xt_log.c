@@ -213,6 +213,8 @@ int log_init(p_xt_log log)
         return -3;
     }
 
+    pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
+
     DD(log, "格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容");
     return 0;
 }

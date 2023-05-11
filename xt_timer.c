@@ -179,6 +179,8 @@ int timer_init(p_xt_timer_set set)
         return -3;
     }
 
+    pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
+
     D("ok");
     return 0;
 }

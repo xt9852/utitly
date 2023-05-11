@@ -411,6 +411,8 @@ int http_server_wait_client_connect(p_xt_http http)
         return -1;
     }
 
+    pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
+
     D("create client thread");
     return 0;
 }
@@ -538,6 +540,8 @@ int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_h
         E("create thread fail, E:%d\n", ret);
         return -2;
     }
+
+    pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
     D("ok");
     return 0;

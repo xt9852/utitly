@@ -321,7 +321,15 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
 
     pthread_t tid;
 
-    pthread_create(&tid, NULL, monitor_thread, monitor);
+    error = pthread_create(&tid, NULL, monitor_thread, monitor);
+
+    if (error != 0)
+    {
+        E(log, "create thread fail, error:%d", error);
+        return -6;
+    }
+
+    pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
     D("ok");
     return 0;
