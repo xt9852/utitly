@@ -201,11 +201,8 @@ int log_init(p_xt_log log)
     log->run = true;
 
     pthread_t tid;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    // 退出时自行释放所占用的资源
 
-    ret = pthread_create(&tid, &attr, log_thread, log);
+    ret = pthread_create(&tid, NULL, log_thread, log);
 
     if (ret != 0)
     {
@@ -226,7 +223,7 @@ int log_init(p_xt_log log)
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量
  *\param[in]    clean       首次打开日志文件时是否清空文件内容
- *\param[in]    root        文件目录根位置
+ *\param[in]    root        代码根目录长度,日志中只保留相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功

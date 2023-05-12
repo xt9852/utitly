@@ -60,7 +60,7 @@ typedef struct _xt_log
     unsigned int    backup;                         ///< 日志文件保留数量
     bool            clean;                          ///< 首次打开日志文件时是否清空文件内容
 
-    unsigned int    root;                           ///< 文件目录根位置
+    unsigned int    root;                           ///< 代码根目录长度,日志中只保留相对目录
     bool            run;                            ///< 日志线程是否运行
     FILE*           file;                           ///< 日志文件句柄
 
@@ -83,7 +83,7 @@ int log_init(p_xt_log log);
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量
  *\param[in]    clean       首次打开日志文件时是否清空文件内容
- *\param[in]    root        文件目录根位置
+ *\param[in]    root        代码根目录长度,日志中只保留相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
