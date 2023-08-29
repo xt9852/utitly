@@ -54,11 +54,14 @@ typedef enum _LOG_CYCLE
 /// 日志信息
 typedef struct _xt_log
 {
+    char            path[LOG_FILENAME_SIZE];        ///< 日志文件路径
     char            filename[LOG_FILENAME_SIZE];    ///< 日志文件名
     LOG_LEVEL       level;                          ///< 日志级别(调试,信息,警告,错误)
     LOG_CYCLE       cycle;                          ///< 日志文件保留周期(时,天,周)
     unsigned int    backup;                         ///< 日志文件保留数量
-    bool            clean;                          ///< 首次打开日志文件时是否清空文件内容
+    bool            clean_log;                      ///< 首次打开日志文件时是否清空文件内容
+    bool            clean_file;                     ///< 首次打开日志文件时是否删除过期文件内容
+
 
     unsigned int    root;                           ///< 代码根目录长度,日志中只保留相对目录
     bool            run;                            ///< 日志线程是否运行
@@ -78,17 +81,19 @@ int log_init(p_xt_log log);
 
 /**
  *\brief        初始化日志
+ *\param[in]    path        日志文件路径
  *\param[in]    filename    日志文件名前缀
  *\param[in]    level       日志级别(调试,信息,警告,错误)
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量
- *\param[in]    clean       首次打开日志文件时是否清空文件内容
+ *\param[in]    clean_log   首次打开日志文件时是否清空文件内容
+ *\param[in]    clean_file  首次打开日志文件时是否删除已经过期文件
  *\param[in]    root        代码根目录长度,日志中只保留相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init_ex(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log);
+int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean_log, bool clean_file, unsigned int root, p_xt_log log);
 
 /**
  *\brief        反初始化日志

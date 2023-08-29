@@ -85,6 +85,113 @@ void log_del_old(p_xt_log log, int timestamp)
     DD(log, "unlink %s", filename);
 }
 
+void log_del_file(p_xt_log log)
+{
+    int cnt;
+    char *mask;
+    unsigned int del;
+    unsigned int now = (unsigned int)time(NULL);
+
+    switch (log->cycle)
+    {
+        case LOG_CYCLE_MINUTE:
+        {
+            cnt = 12;
+            mask = "????????????";
+            del = now - log->backup * 60;
+            break;
+        }
+        case LOG_CYCLE_HOUR:
+        {
+            cnt = 10;
+            mask = "??????????";
+            del = now - log->backup * 3600;
+            break;
+        }
+        case LOG_CYCLE_DAY:
+        {
+            cnt = 8;
+            mask = "????????";
+            del = now - log->backup * 86400;
+            break;
+        }
+        case LOG_CYCLE_WEEK:
+        {
+            cnt = 8;
+            mask = "????????";
+            del = now - log->backup * 604800;
+            break;
+        }
+        default:
+        {
+            return;
+        }
+    }
+
+    // 查找文件删除时间小于del的文件
+    char        *end;
+    char         tmp[LOG_FILENAME_SIZE];
+    unsigned int sec;
+
+    struct tm t;
+    WIN32_FIND_DATAA data;
+
+    snprintf(tmp, LOG_FILENAME_SIZE, "%s\\%s.%s.txt", log->path, log->filename, mask);
+
+    HANDLE err = FindFirstFileA(tmp, &data);
+
+    if (err == INVALID_HANDLE_VALUE)
+    {
+        printf("FindFirstFileA error!");
+        return;
+    }
+
+    do
+    {
+        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        {
+            continue;
+        }
+
+        end = strrchr(data.cFileName, '.');
+        strncpy_s(tmp, LOG_FILENAME_SIZE, end - cnt, cnt); // 年月日时间字符串
+        memset(&t, 0, sizeof(t));
+
+        switch (log->cycle)
+        {
+            case LOG_CYCLE_MINUTE:
+            {
+                sscanf_s(tmp, "%04d%02d%02d%02d%02d", &t.tm_year, &t.tm_mon, &t.tm_mday, &t.tm_hour, &t.tm_min);
+                break;
+            }
+            case LOG_CYCLE_HOUR:
+            {
+                sscanf_s(tmp, "%04d%02d%02d%02d", &t.tm_year, &t.tm_mon, &t.tm_mday, &t.tm_hour);
+                break;
+            }
+            default:
+            {
+                sscanf_s(tmp, "%04d%02d%02d", &t.tm_year, &t.tm_mon, &t.tm_mday);
+                break;
+            }
+        }
+
+        t.tm_mon -= 1;      // 月(0-11)
+        t.tm_year -= 1900;  // 自1900年起
+        sec = (unsigned int)mktime(&t);
+
+        DD(log, "%s %s %u %u", data.cFileName, tmp, sec, del);
+
+        if (sec <= del)
+        {
+            snprintf(tmp, LOG_FILENAME_SIZE, "%s\\%s", log->path, data.cFileName);
+            _unlink(tmp);
+            DD(log, "unlink %s", tmp);
+        }
+    }
+    while(FindNextFileA(err, &data));
+}
+
 /**
  *\brief        日志后台线程
  *\return       空
@@ -176,13 +283,13 @@ void* log_thread(p_xt_log log)
 
 /**
  *\brief        初始化日志
- *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
+ *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean_log,clean_file
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
 int log_init(p_xt_log log)
 {
-    int ret = log_add_new(log, (int)time(NULL), log->clean);
+    int ret = log_add_new(log, (int)time(NULL), log->clean_log);
 
     if (0 != ret)
     {
@@ -212,23 +319,27 @@ int log_init(p_xt_log log)
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    DD(log, "格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容");
+    DD(log, "日志格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容");
+
+    log_del_file(log);      // 删除过期文件
     return 0;
 }
 
 /**
  *\brief        初始化日志
+ *\param[in]    path        日志文件路径
  *\param[in]    filename    日志文件名前缀
  *\param[in]    level       日志级别(调试,信息,警告,错误)
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量
- *\param[in]    clean       首次打开日志文件时是否清空文件内容
+ *\param[in]    clean_log   首次打开日志文件时是否清空文件内容
+ *\param[in]    clean_file  首次打开日志文件时是否删除已经过期文件
  *\param[in]    root        代码根目录长度,日志中只保留相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init_ex(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean, unsigned int root, p_xt_log log)
+int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean_log, bool clean_file, unsigned int root, p_xt_log log)
 {
     if (NULL == filename || NULL == log)
     {
@@ -236,14 +347,16 @@ int log_init_ex(const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned
         return -1;
     }
 
+    strncpy_s(log->path, LOG_FILENAME_SIZE, path, LOG_FILENAME_SIZE - 1);
     strncpy_s(log->filename, LOG_FILENAME_SIZE, filename, LOG_FILENAME_SIZE - 1);
-    log->file   = NULL;
-    log->level  = level;
-    log->cycle  = cycle;
-    log->backup = backup;
-    log->clean  = clean;
-    log->root   = root;
-    log->run    = false;
+    log->file        = NULL;
+    log->level       = level;
+    log->cycle       = cycle;
+    log->backup      = backup;
+    log->clean_log   = clean_log;
+    log->clean_file  = clean_file;
+    log->root        = root;
+    log->run         = false;
 
     return log_init(log);
 }
