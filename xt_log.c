@@ -85,6 +85,11 @@ void log_del_old(p_xt_log log, int timestamp)
     DD(log, "unlink %s", filename);
 }
 
+/**
+ *\brief        删除过期日志文件
+ *\param[in]    log         日志数据
+ *\return                   无
+ */
 void log_del_file(p_xt_log log)
 {
     int cnt;
