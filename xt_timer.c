@@ -194,7 +194,7 @@ int timer_uninit(p_xt_timer_set set)
 {
     set->run = false;
 
-    list_uninit(&set->timer_list);
+    return list_uninit(&set->timer_list);
 }
 
 /**
