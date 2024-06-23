@@ -1,5 +1,6 @@
 /**
  *\file     xt_memory_pool.h
+ *\note     UTF-8
  *\author   xt
  *\version  1.0.0
  *\date     2015.8.29

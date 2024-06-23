@@ -1,5 +1,6 @@
 /**
  *\file     xt_ssh2.h
+ *\note     UTF-8
  *\author   xt
  *\version  1.0.0
  *\date     2022.02.08

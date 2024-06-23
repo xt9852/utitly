@@ -1,5 +1,6 @@
 /**
  *\file     xt_utitly.c
+ *\note     UTF-8
  *\author   xt
  *\version  1.0.0
  *\date     2016.12.07

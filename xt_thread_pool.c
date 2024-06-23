@@ -1,5 +1,6 @@
 /**
  *\file     xt_thread_pool.c
+ *\note     UTF-8
  *\author   xt
  *\version  1.0.0
  *\date     2013.8.16

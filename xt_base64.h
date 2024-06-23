@@ -1,5 +1,6 @@
 /**
  *\file     xt_base64.h
+ *\note     UTF-8
  *\author   xt
  *\version  1.0.0
  *\date     2012.06.25
