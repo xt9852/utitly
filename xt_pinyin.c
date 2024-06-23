@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_pinyin.c
- *\author       xt
- *\version      1.0.0
- *\date         2022.02.08
- *\brief        拼音模块实现,UTF-8(No BOM)
+ *\file     xt_pinyin.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    拼音模块实现
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,16 +15,14 @@ bool            g_pinyin_malloc = false;    ///< 拼音数据是于malloc分配�
 
 unsigned char  *g_pinyin        = NULL;     ///< 拼音数据
 
-/// 拼音组数据
-typedef struct _xt_peyin
+typedef struct _xt_peyin                    ///  拼音组数据
 {
     char        *m;                         ///< 拼音字母
     int         len;                        ///< 拼音长
 
 } xt_peyin, *p_xt_peyin;                    ///< 拼音组数据指针
 
-/// 拼音声母
-const xt_peyin g_pinyin_sm[] = {
+const xt_peyin g_pinyin_sm[] = {            ///< 拼音声母
     { "",   1},
     { "ch", 2},
     { "sh", 2},
@@ -52,8 +49,7 @@ const xt_peyin g_pinyin_sm[] = {
     { "z",  1}
 };
 
-/// 拼音韵母
-const xt_peyin g_pinyin_ym[] = {
+const xt_peyin g_pinyin_ym[] = {            ///< 拼音韵母
     { "",     1},
     { "iang", 4},
     { "iong", 4},
@@ -91,7 +87,7 @@ const xt_peyin g_pinyin_ym[] = {
 };
 
 /**
- *\brief        从资源中加载拼音数据
+ *\brief                    从资源中加载拼音数据
  *\param[in]    res_type    资源类名,"PINYIN"
  *\param[in]    res_id      资源ID
  *\return       0           成功
@@ -143,7 +139,7 @@ int pinyin_init_res(char *res_type, int res_id)
 }
 
 /**
- *\brief        从文件中加载拼音数据
+ *\brief                    从文件中加载拼音数据
  *\param[in]    filename    文件名
  *\return       0           成功
  */
@@ -187,7 +183,7 @@ int pinyin_init(const char *filename)
 }
 
 /**
- *\brief        将gbk转成拼音
+ *\brief                    将gbk转成拼音
  *\param[in]    src         源串
  *\param[in]    src_len     源串长
  *\param[out]   dst         目标串

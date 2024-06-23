@@ -1,18 +1,17 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_log.h
- *\author       xt
- *\version      1.0.0
- *\date         2016.12.07
- *\brief        日志模块定义,UTF-8(No BOM)
+ *\file     xt_log.h
+ *\author   xt
+ *\version  1.0.0
+ *\date     2016.12.07
+ *\brief    日志模块定义
  */
 #ifndef _XT_LOG_H_
 #define _XT_LOG_H_
 #include <stdio.h>  // FILE
 #include "xt_utitly.h"
 
-#define FFL                 __FILE__, __FUNCTION__, __LINE__                ///< 源文件,函数名称,行号
-#define LOG_FILENAME_SIZE   512                                             ///< 日志文件名缓冲区大小
+#define FFL                 __FILE__, __FUNCTION__, __LINE__                    ///< 源文件,函数名称,行号
+#define LOG_FILENAME_SIZE   512                                                 ///< 日志文件名缓冲区大小
 
 #ifdef _WINDOWS
     #define DD(l, ...)  log_write(l,        FFL, LOG_LEVEL_DEBUG, __VA_ARGS__)  ///< 调试,指定文件输出
@@ -29,7 +28,6 @@
     #define W (args...) log_write(g_xt_log, FFL, LOG_LEVEL_WARN,  ##args)       ///< 警告
     #define E (args...) log_write(g_xt_log, FFL, LOG_LEVEL_ERROR, ##args)       ///< 错误
 #endif
-
 
 /// 日志级别
 typedef enum _LOG_LEVEL
@@ -51,8 +49,8 @@ typedef enum _LOG_CYCLE
 
 } LOG_CYCLE;
 
-/// 日志信息
-typedef struct _xt_log
+
+typedef struct _xt_log                              ///  日志信息
 {
     char            path[LOG_FILENAME_SIZE];        ///< 日志文件路径
     char            filename[LOG_FILENAME_SIZE];    ///< 日志文件名
@@ -72,7 +70,7 @@ typedef struct _xt_log
 p_xt_log            g_xt_log;                       ///< 全局日志指针
 
 /**
- *\brief        初始化日志
+ *\brief                    初始化日志
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
@@ -80,7 +78,7 @@ p_xt_log            g_xt_log;                       ///< 全局日志指针
 int log_init(p_xt_log log);
 
 /**
- *\brief        初始化日志
+ *\brief                    初始化日志
  *\param[in]    path        日志文件路径
  *\param[in]    filename    日志文件名前缀
  *\param[in]    level       日志级别(调试,信息,警告,错误)

@@ -1,16 +1,15 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_base64.h
- *\author       xt
- *\version      1.0.0
- *\date         2012.06.25
- *\brief        BASE64模块定义,UTF-8(No BOM)
+ *\file     xt_base64.h
+ *\author   xt
+ *\version  1.0.0
+ *\date     2012.06.25
+ *\brief    BASE64模块定义
  */
 #ifndef _XT_BASE64_H_
 #define _XT_BASE64_H_
 
 /**
- *\brief      得到BASE64串
+ *\brief                    得到BASE64串
  *\param[in]  data          数据
  *\param[in]  data_len      数据长度
  *\param[out] base64        BASE64字符串
@@ -20,7 +19,7 @@
 int base64_encode(const char *data, int data_len, char *base64, int *base64_len);
 
 /**
- *\brief      从BASE65串得到原字符串
+ *\brief                    从BASE65串得到原字符串
  *\param[in]  base64        BASE64字符串数据
  *\param[in]  base64_len    BASE64字符串数据长度
  *\param[out] data          输出数据缓冲

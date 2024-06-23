@@ -1,20 +1,17 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_http.h
- *\author       xt
- *\version      1.0.0
- *\date         2022.02.08
- *\brief        HTTP模块定义,UTF-8(No BOM)
+ *\file     xt_http.h
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    HTTP模块定义
  */
 #ifndef _XT_HTTP_H_
 #define _XT_HTTP_H_
 #include "xt_log.h"
 
-/// 参数数量
-#define ARG_SIZE        128
+#define ARG_SIZE        128                 ///< 参数数量
 
-/// 页面类型
-enum
+enum                                        ///  页面类型
 {
     HTTP_TYPE_HTML = 0,                     ///< 页面
     HTTP_TYPE_XML,                          ///< XML
@@ -25,18 +22,16 @@ enum
     HTTP_TYPE_JPEG                          ///< jpeg图片
 };
 
-/// URL参数
-typedef struct _xt_http_arg
+typedef struct _xt_http_arg                 ///  URL参数
 {
     const char         *key;                ///< 参数名称
 
     const char         *value;              ///< 参数值
     unsigned int        value_len;          ///< 参数值长度
 
-} xt_http_arg, *p_xt_http_arg;              ///< URL参数指针
+} xt_http_arg, *p_xt_http_arg;
 
-/// HTTP数据
-typedef struct _xt_http_data
+typedef struct _xt_http_data                ///  HTTP数据
 {
     const char         *uri;                ///< URI地址
 
@@ -50,18 +45,18 @@ typedef struct _xt_http_data
 
     char               *content;            ///< 内容数据
 
-} xt_http_data, *p_xt_http_data;            ///< HTTP数据指针
+} xt_http_data, *p_xt_http_data;
 
 /**
- *\brief        http回调函数
- *\param[in]    uri             URI地址
- *\param[out]   data            HTTP的数据
- *\return       200             成功
+ *\brief                    http回调函数
+ *\param[in]    uri         URI地址
+ *\param[out]   data        HTTP的数据
+ *\return       200         成功
  */
 typedef int (*XT_HTTP_CALLBACK)(const p_xt_http_data data);
 
-/// HTTP服务数据
-typedef struct _xt_http
+
+typedef struct _xt_http                     ///  HTTP服务数据
 {
     bool                run;                ///< 服务线程是否运行
 
@@ -78,18 +73,18 @@ typedef struct _xt_http
 } xt_http, *p_xt_http;                      ///< HTTP服务数据指针
 
 /**
- *\brief        初始化http
- *\param[in]    ip              地址
- *\param[in]    port            监听端口
- *\param[in]    proc            处理请求回调
- *\param[in]    http            服务数据
- *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
- *\return       0               成功
+ *\brief                    初始化http
+ *\param[in]    ip          地址
+ *\param[in]    port        监听端口
+ *\param[in]    proc        处理请求回调
+ *\param[in]    http        服务数据
+ *\attention    http        需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0           成功
  */
 int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http);
 
 /**
- *\brief        URI编码
+ *\brief                    URI编码
  *\param[in]    in          原始的数据
  *\param[in]    in_len      原始的数据长度
  *\param[out]   out         编码后数据

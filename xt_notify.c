@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_notify.c
- *\author       xt
- *\version      1.0.0
- *\date         2022-02-08
- *\brief        系统托盘图标模块实现,UTF-8(No BOM)
+ *\file     xt_notify.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    系统托盘图标模块实现
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +19,7 @@ int                 g_notify_menu_count     = 0;        ///< 菜单数量
 int                 g_notify_menu_time      = 0;        ///< 菜单定时
 
 /**
- *\brief        定时任务
+ *\brief                        定时任务
  *\param[in]    wnd             窗体句柄
  *\param[in]    w               定时器ID
  *\return                       无
@@ -34,7 +33,7 @@ void notify_on_timer(HWND wnd, WPARAM w)
 }
 
 /**
- *\brief        系统托盘消息处理函数
+ *\brief                        系统托盘消息处理函数
  *\param[in]    wnd             窗体句柄
  *\param[in]    l               操作
  *\return                       无
@@ -52,11 +51,11 @@ void notify_on_sys_msg(HWND wnd, LPARAM l)
 }
 
 /**
- *\brief        窗体关闭处理函数 \n
-                当用户点击窗体上的关闭按钮时 \n
-                系统发出WM_CLOSE消息,自己执行DestroyWindow关闭窗口 \n
-                然后发送WM_DESTROY消息,自己执行PostQuitMessage关闭应用程序 \n
-                最后发出WM_QUIT消息来关闭消息循环
+ *\brief                        窗体关闭处理函数 \n
+                                当用户点击窗体上的关闭按钮时 \n
+                                系统发出WM_CLOSE消息,自己执行DestroyWindow关闭窗口 \n
+                                然后发送WM_DESTROY消息,自己执行PostQuitMessage关闭应用程序 \n
+                                最后发出WM_QUIT消息来关闭消息循环
  *\param[in]    wnd             窗体句柄
  *\return                       无
  */
@@ -66,7 +65,7 @@ void notify_on_close(HWND wnd)
 }
 
 /**
- *\brief        窗体消毁处理函数
+ *\brief                        窗体消毁处理函数
  *\param[in]    wnd             窗体句柄
  *\return                       无
  */
@@ -77,7 +76,7 @@ void notify_on_destory(HWND wnd)
 }
 
 /**
- *\brief        命令消息处理函数,菜单,按钮都会发此消息
+ *\brief                        命令消息处理函数,菜单,按钮都会发此消息
  *\param[in]    wnd             窗体句柄
  *\param[in]    w               消息参数
  *\return                       无
@@ -96,7 +95,7 @@ void notify_on_command(HWND wnd, WPARAM w)
 }
 
 /**
- *\brief        窗体类消息处理回调函数
+ *\brief                        窗体类消息处理回调函数
  *\param[in]    wnd             窗体句柄
  *\param[in]    msg             消息ID
  *\param[in]    w               消息参数
@@ -122,7 +121,7 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
 }
 
 /**
- *\brief        设置操作系统任务栏右侧的托盘图标和菜单
+ *\brief                        设置操作系统任务栏右侧的托盘图标和菜单
  *\attention                    要添加消息循环
  *\param[in]    instance        当前实例句柄
  *\param[in]    icon_id         icon_id图标ID
@@ -196,7 +195,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
 }
 
 /**
- *\brief        windows消息循环
+ *\brief                        windows消息循环
  *\return       0               成功
  */
 int notify_loop_msg()

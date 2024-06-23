@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_utitly.c
- *\author       xt
- *\version      1.0.0
- *\date         2016.12.07
- *\brief        工具模块实现,UTF-8(No BOM)
+ *\file     xt_utitly.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2016.12.07
+ *\brief    工具模块实现
  */
 #include "xt_utitly.h"
 #include <stdio.h>
@@ -22,7 +21,7 @@
 #endif
 
 /**
- *\brief        得到精确时间,微秒级
+ *\brief                    得到精确时间,微秒级
  *\param[out]   tv          时间
  *\param[in]    tz          时区
  *\return       0           成功
@@ -50,11 +49,11 @@ int gettimeofday(struct timeval *tv, void *tz)
 #endif
 
 /**
- *\brief        得到格式化后的信息
- *\param[in]    n            数据
- *\param[out]   info            信息
- *\param[in]    info_size       缓冲区大小
- *\return                       无
+ *\brief                    得到格式化后的信息
+ *\param[in]    n           数据
+ *\param[out]   info        信息
+ *\param[in]    size        缓冲区大小
+ *\return                   无
  */
 void format_data(unsigned __int64 n, char *info, int size)
 {

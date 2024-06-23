@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_http.c
- *\author       xt
- *\version      1.0.0
- *\date         2022-02-08
- *\brief        HTTP模块实现,UTF-8(No BOM)
+ *\file     xt_http.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022-02-08
+ *\brief    HTTP模块实现
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,33 +13,27 @@
 #include <ws2tcpip.h>
 #include "xt_http.h"
 
-/// 请求头
-#define HTTP_HEAD       "HTTP/1.1 %s\nContent-Type: %s\nContent-Length: %d\n\n"
+#define HTTP_HEAD       "HTTP/1.1 %s\nContent-Type: %s\nContent-Length: %d\n\n" ///< 请求头
 
-/// 404时返回数据
-#define HTTP_FILE_404   "404"
+#define HTTP_FILE_404   "404"                                                   ///< 404时返回数据
 
-/// 客户端线程参数
-typedef struct _client_thread_param
+typedef struct _client_thread_param                                             ///  客户端线程参数
 {
-    int         client_sock;                    ///< 客户端socket
+    int         client_sock;                                                    ///< 客户端socket
 
-    p_xt_http   http;                           ///< http数据
+    p_xt_http   http;                                                           ///< http数据
 
-} client_thread_param, *p_client_thread_param;  ///< 客户端线程参数指针
+} client_thread_param, *p_client_thread_param;
 
-/// 十六进制字符
-const static char HEX_STR[] = "0123456789ABCDEF";
+const static char HEX_STR[] = "0123456789ABCDEF";                               ///< 十六进制字符
 
-/// 状态码
-const static char *g_http_code[] =
+const static char *g_http_code[] =                                              ///< 状态码
 {
     "200 OK",
     "404 Not Found"
 };
 
-/// 页面类型
-const static char *g_http_type[] =
+const static char *g_http_type[] =                                              ///< 页面类型
 {
     "text/html",
     "text/xml",
@@ -52,7 +45,7 @@ const static char *g_http_type[] =
 };
 
 /**
- *\brief        十六进制字符转数字
+ *\brief                    十六进制字符转数字
  *\param[in]    ch          十六进制字符
  *\return                   数字
  */
@@ -74,7 +67,7 @@ char http_to_hex(char ch)
 }
 
 /**
- *\brief        URI编码
+ *\brief                    URI编码
  *\param[in]    in          原始的数据
  *\param[in]    in_len      原始的数据长度
  *\param[out]   out         编码后数据
@@ -114,7 +107,7 @@ int uri_encode(const char *in, int in_len, char *out, int *out_len)
 }
 
 /**
- *\brief        URI解码
+ *\brief                    URI解码
  *\param[in]    in          URI数据
  *\param[in]    in_len      URI数据长度
  *\param[out]   out         原始数据
@@ -175,7 +168,7 @@ int uri_decode(char *in, int in_len, char *out, int *out_len)
 }
 
 /**
- *\brief        得到URI中的参数,/index.html?arg1=1&arg2=2
+ *\brief                    得到URI中的参数,/index.html?arg1=1&arg2=2
  *\param[out]   data        URI的参数
  *\return       0           成功
  */
@@ -232,7 +225,7 @@ int http_get_arg(p_xt_http_data data)
 }
 
 /**
- *\brief        得到URI
+ *\brief                    得到URI
  *\param[in]    buf         数据包
  *\param[in]    buf_size    数据包缓冲区大小
  *\param[out]   data        HTTP数据
@@ -258,12 +251,12 @@ int http_get_uri(char *buf, int buf_size, p_xt_http_data data)
 }
 
 /**
- *\brief        处理客户端的请求
- *\param[in]    http            http服务数据
- *\param[in]    client_sock     客户端socket
- *\param[in]    buf             数据缓冲区
- *\param[in]    buf_size        数据缓冲区大小
- *\return       0               成功
+ *\brief                    处理客户端的请求
+ *\param[in]    http        http服务数据
+ *\param[in]    client_sock 客户端socket
+ *\param[in]    buf         数据缓冲区
+ *\param[in]    buf_size    数据缓冲区大小
+ *\return       0           成功
  */
 int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size)
 {
@@ -334,9 +327,9 @@ int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size
 }
 
 /**
- *\brief        客户端处理函数
- *\param[in]    param           客户端socket和http服务数据
- *\return                       空
+ *\brief                    客户端处理函数
+ *\param[in]    param       客户端socket和http服务数据
+ *\return                   空
  */
 void* http_client_thread(p_client_thread_param param)
 {
@@ -363,9 +356,9 @@ void* http_client_thread(p_client_thread_param param)
 }
 
 /**
- *\brief        处理客户端的连接
- *\param[in]    http            http服务数据
- *\return       0               成功
+ *\brief                    处理客户端的连接
+ *\param[in]    http        http服务数据
+ *\return       0           成功
  */
 int http_server_wait_client_connect(p_xt_http http)
 {
@@ -418,15 +411,15 @@ int http_server_wait_client_connect(p_xt_http http)
 }
 
 /**
- *\brief        创建监听socket
- *\param[in]    http            http服务数据
- *\return       0               成功
+ *\brief                    创建监听socket
+ *\param[in]    http        http服务数据
+ *\return       0           成功
  */
 int http_server_create_listen_socket(p_xt_http http)
 {
     int ret = 0;
     WSADATA wsa = {0};
-	WSAStartup(MAKEWORD(2, 0), &wsa);
+    WSAStartup(MAKEWORD(2, 0), &wsa);
 
     int listen_sock = socket(http->ipv4 ? AF_INET : AF_INET6, SOCK_STREAM, 0);
 
@@ -480,9 +473,9 @@ int http_server_create_listen_socket(p_xt_http http)
 }
 
 /**
- *\brief        HTTP服务主线程
- *\param[in]    http            http服务数据
- *\return                       空
+ *\brief                    HTTP服务主线程
+ *\param[in]    http        http服务数据
+ *\return                   空
  */
 void* http_server_thread(p_xt_http http)
 {
@@ -510,13 +503,13 @@ void* http_server_thread(p_xt_http http)
 }
 
 /**
- *\brief        初始化http
- *\param[in]    ip              地址
- *\param[in]    port            监听端口
- *\param[in]    proc            处理请求回调
- *\param[in]    http            服务数据
- *\attention    http            需要转递到线线程中,不要释放此内存,否则会野指针
- *\return       0               成功
+ *\brief                    初始化http
+ *\param[in]    ip          地址
+ *\param[in]    port        监听端口
+ *\param[in]    proc        处理请求回调
+ *\param[in]    http        服务数据
+ *\attention    http        需要转递到线线程中,不要释放此内存,否则会野指针
+ *\return       0           成功
  */
 int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
 {

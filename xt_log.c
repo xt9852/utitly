@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_log.c
- *\author       xt
- *\version      1.0.0
- *\date         2016.12.07
- *\brief        日志模块实现,UTF-8(No BOM)
+ *\file     xt_log.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2016.12.07
+ *\brief    日志模块实现
  */
 #include "xt_log.h"
 #include "xt_utitly.h"
@@ -15,7 +14,7 @@
 const static char XT_LOG_LEVEL[] = "DIWE";  ///< 日志级别字符
 
 /**
- *\brief        设置日志文件名
+ *\brief                    设置日志文件名
  *\param[in]    log         日志数据
  *\param[in]    timestamp   时间戳
  *\param[out]   filename    文件名
@@ -48,7 +47,7 @@ void log_set_filename(p_xt_log log, time_t timestamp, char *filename, int max)
 }
 
 /**
- *\brief        新建日志文件
+ *\brief                    新建日志文件
  *\param[in]    log         日志数据
  *\param[in]    timestamp   时间戳
  *\param[in]    clean       是否清空日志文件
@@ -69,7 +68,7 @@ int log_add_new(p_xt_log log, int timestamp, bool clean)
 }
 
 /**
- *\brief        删除旧日志文件
+ *\brief                    删除旧日志文件
  *\param[in]    log         日志数据
  *\param[in]    timestamp   时间戳
  *\return                   无
@@ -86,7 +85,7 @@ void log_del_old(p_xt_log log, int timestamp)
 }
 
 /**
- *\brief        删除过期日志文件
+ *\brief                    删除过期日志文件
  *\param[in]    log         日志数据
  *\return                   无
  */
@@ -198,8 +197,8 @@ void log_del_file(p_xt_log log)
 }
 
 /**
- *\brief        日志后台线程
- *\return       空
+ *\brief                    日志后台线程
+ *\return                   空
  */
 void* log_thread(p_xt_log log)
 {
@@ -287,7 +286,7 @@ void* log_thread(p_xt_log log)
 }
 
 /**
- *\brief        初始化日志
+ *\brief                    初始化日志
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean_log,clean_file
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
@@ -331,7 +330,7 @@ int log_init(p_xt_log log)
 }
 
 /**
- *\brief        初始化日志
+ *\brief                    初始化日志
  *\param[in]    path        日志文件路径
  *\param[in]    filename    日志文件名前缀
  *\param[in]    level       日志级别(调试,信息,警告,错误)
@@ -367,7 +366,7 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
 }
 
 /**
- *\brief        反初始化日志
+ *\brief                    反初始化日志
  *\param[in]    log         日志数据
  *\return       无
  */
@@ -386,7 +385,7 @@ void log_uninit(p_xt_log log)
 }
 
 /**
- *\brief        写日志不带锁
+ *\brief                    写日志不带锁
  *\param[in]    log         日志数据
  *\param[in]    file        文件名
  *\param[in]    func        函数名

@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_character_set.c
- *\author       xt
- *\version      1.0.0
- *\date         2022.06.04
- *\brief        字符集转码实现,UTF-8(No BOM)
+ *\file     xt_character_set.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.06.04
+ *\brief    字符集转码实现
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +12,7 @@
 #include "xt_character_set.h"
 
 /**
- *\brief        将utf8转成unicode
+ *\brief                    将utf8转成unicode
  *\param[in]    src         源串
  *\param[in]    src_len     源串长
  *\param[out]   dst         目标串
@@ -27,8 +26,6 @@ int utf8_unicode(const char *src, int src_len, short *dst, int *dst_len)
         E("param null or buff too small");
         return -1;
     }
-
-    //D("src len:%d dst len:%d", src_len, *dst_len);
 
     // 转成unicode后的长度
     int len = MultiByteToWideChar(CP_UTF8, 0, src, src_len, NULL, 0);
@@ -49,7 +46,7 @@ int utf8_unicode(const char *src, int src_len, short *dst, int *dst_len)
 }
 
 /**
- *\brief        将unicode转成ansi(gbk)
+ *\brief                    将unicode转成ansi(gbk)
  *\param[in]    src         源串
  *\param[in]    src_len     源串长
  *\param[out]   dst         目标串
@@ -63,8 +60,6 @@ int unicode_ansi(const short *src, int src_len, char *dst, int *dst_len)
         E("param null or buff too small");
         return -1;
     }
-
-    //D("src len:%d dst len:%d", src_len, *dst_len);
 
     int len = WideCharToMultiByte(CP_ACP, 0, src, src_len, 0, 0, 0, 0);
 
@@ -83,7 +78,7 @@ int unicode_ansi(const short *src, int src_len, char *dst, int *dst_len)
 }
 
 /**
- *\brief        将unicode转成utf8
+ *\brief                    将unicode转成utf8
  *\param[in]    src         源串
  *\param[in]    src_len     源串长
  *\param[out]   dst         目标串
@@ -97,8 +92,6 @@ int unicode_utf8(const short *src, int src_len, char *dst, int *dst_len)
         E("param null or buff too small");
         return -1;
     }
-
-    //D("src len:%d dst len:%d", src_len, *dst_len);
 
     int len = WideCharToMultiByte(CP_UTF8, 0, src, src_len, 0, 0, 0, 0);
 
@@ -117,7 +110,7 @@ int unicode_utf8(const short *src, int src_len, char *dst, int *dst_len)
 }
 
 /**
- *\brief        将ansi转成utf8
+ *\brief                    将ansi转成utf8
  *\param[in]    src         源串
  *\param[in]    src_len     源串长
  *\param[out]   dst         目标串
@@ -131,8 +124,6 @@ int ansi_utf8(const char *src, int src_len, char *dst, int *dst_len)
         E("param null or buff too small");
         return -1;
     }
-
-    //D("src len:%d dst len:%d", src_len, *dst_len);
 
     // 转成unicode后的长度
     int len = MultiByteToWideChar(CP_ACP, 0, src, src_len, NULL, 0);

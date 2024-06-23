@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_timer.c
- *\author       xt
- *\version      1.0.0
- *\date         2014.6.24
- *\brief        定时器模块器实现,UTF-8(No BOM)
+ *\file     xt_timer.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2014.6.24
+ *\brief    定时器模块器实现
  */
 #include <pthread.h>
 #include <time.h>
@@ -13,7 +12,7 @@
 #include "xt_log.h"
 
 /**
- *\brief        检查定时器
+ *\brief                    检查定时器
  *\param[in]    timer       定时器
  *\param[in]    param       自定义参数
  *\return       0
@@ -111,8 +110,8 @@ int timer_check(p_xt_timer timer, void *param)
 }
 
 /**
- *\brief        定时器线程
- *\param[in]    set     定时器管理者
+ *\brief                    定时器线程
+ *\param[in]    set         定时器管理者
  *\return                   空
  */
 void* timer_thread(p_xt_timer_set set)
@@ -145,9 +144,9 @@ void* timer_thread(p_xt_timer_set set)
 }
 
 /**
- *\brief        定时器初始化
- *\param[in]    set     定时器管理者
- *\attention    set     需要转递到线线程中,不要释放此内存,否则会野指针
+ *\brief                    定时器初始化
+ *\param[in]    set         定时器管理者
+ *\attention    set         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
 int timer_init(p_xt_timer_set set)
@@ -186,8 +185,8 @@ int timer_init(p_xt_timer_set set)
 }
 
 /**
- *\brief        定时器反初始化
- *\param[in]    set     定时器管理者
+ *\brief                    定时器反初始化
+ *\param[in]    set         定时器管理者
  *\return       0           成功
  */
 int timer_uninit(p_xt_timer_set set)
@@ -198,7 +197,7 @@ int timer_uninit(p_xt_timer_set set)
 }
 
 /**
- *\brief        添加周期定时器
+ *\brief                    添加周期定时器
  *\param[in]    set         定时器管理者
  *\param[in]    name        定时器名称
  *\param[in]    cycle       定时器循环周期秒
@@ -228,7 +227,7 @@ int timer_add_cycle(p_xt_timer_set set, const char *name, unsigned int cycle,
 }
 
 /**
- *\brief        添加条件定时器
+ *\brief                    添加条件定时器
  *\param[in]    set         定时器管理者
  *\param[in]    name        定时器名称
  *\param[in]    type        定时器类型:TIMER_CRON_YDAY,TIMER_CRON_WDAY,...

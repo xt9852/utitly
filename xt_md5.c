@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_md5.c
- *\author       xt
- *\version      1.0.0
- *\date         2022.02.08
- *\brief        MD5模块实现,UTF-8(No BOM)
+ *\file     xt_md5.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    MD5模块实现
  */
 #include "xt_md5.h"
 #include "xt_log.h"
@@ -137,7 +136,7 @@ MD5码以512位分组来处理输入的信息,且每一分组又被划分为16�
 const char *MD5_STRING = "0123456789ABCDEF";
 
 /**
- *\brief        得到MD5数据
+ *\brief                    得到MD5数据
  *\param[in]    data        数据
  *\param[in]    data_len    数据长度
  *\param[out]   md5         MD5数据
@@ -193,7 +192,7 @@ int md5_get(const char *data, int data_len, p_xt_md5 md5)
 }
 
 /**
- *\brief        得到MD5字符串
+ *\brief                    得到MD5字符串
  *\param[in]    data        数据
  *\param[in]    data_len    数据长度
  *\param[out]   md5_str     MD5字符串,大写字母

@@ -1,43 +1,43 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_exe_ico.c
- *\author       xt
- *\version      1.0.0
- *\date         2022-02-08
- *\brief        EXE程序图标模块实现,UTF-8(No BOM)
+ *\file     xt_exe_ico.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022-02-08
+ *\brief    EXE程序图标模块实现
  */
 #include <windows.h>
 #include "xt_exe_ico.h"
 #include "xt_log.h"
 
-/// 程序图标组
-#define RT_GROUP_ICONA   MAKEINTRESOURCEA((ULONG_PTR)(RT_ICON) + DIFFERENCE)
+#define RT_GROUP_ICONA   MAKEINTRESOURCEA((ULONG_PTR)(RT_ICON) + DIFFERENCE)    ///< 程序图标组
 
-/// 程序图标
-#define RT_ICONA         MAKEINTRESOURCEA(3)
-
-// 图标文件格式:图标文件头+图片入口+图片数据
-//
-// 图标文件头:
-// 2字节,保留字段,必须为0
-// 2字节,文件类型,必须为1
-// 2字节,图片数量
-//
-// 图片入口:第一张图片都有一个入口
-// 1字节,宽,256为0
-// 1字节,高,256为0
-// 1字节,颜色数
-// 1字节,保留字段,必须为1
-// 2字节,平面数,一般为1
-// 2字节,比特数,4,8,24,32
-// 4字节,本张图片数据长度
-// 4字节,本张图片数据位置
-//
-// 图片数据:
-// 位图格式
+#define RT_ICONA         MAKEINTRESOURCEA(3)                                    ///< 程序图标
 
 /**
- *\brief        得到exe中图标数据
+ *\brief                        得到exe中图标数据
+ * ***
+ * **图标文件格式**: 图标文件头+图片入口+图片数据
+ *
+ * **图标文件头**
+ * 位置|大小|说明
+ * -|-|-
+ * 0|2|保留字段,必须为0
+ * 2|2|文件类型,必须为1
+ * 4|2|图片数量
+ *
+ * **图片入口** 每一张图片都有一个入口
+ * 位置|大小|说明
+ * -|-|-
+ * 0|1|宽,256为0
+ * 1|1|高,256为0
+ * 2|1|颜色数
+ * 3|1|保留字段,必须为1
+ * 4|2|平面数,一般为1
+ * 6|2|比特数,4,8,24,32
+ * 8|4|本张图片数据长度
+ * 12|4|本张图片数据位置
+ *
+ * ***
  *\param[in]    id              图片在图标中的id
  *\param[out]   data            图标数据
  *\param[out]   data_len        图标数据长
@@ -56,7 +56,7 @@ void exe_ico_get_item(unsigned int id, unsigned char *data, unsigned int *data_l
 }
 
 /**
- *\brief        exe中的图标和实际图标有差异,"本张图片数据位置"数据是"1,2,3.."且只有2个字节,需要修改为4个字节
+ *\brief                        exe中的图标和实际图标有差异,"本张图片数据位置"数据是"1,2,3.."且只有2个字节,需要修改为4个字节
  *\param[in]    in              图标数据
  *\param[in]    in_len          图标数据长度
  *\param[out]   out             修正后图标数据
@@ -100,7 +100,7 @@ void exe_ico_update_entry(unsigned char *in, unsigned int in_len, unsigned char 
 }
 
 /**
- *\brief        得到exe中图标数据
+ *\brief                        得到exe中图标数据
  *\param[in]    ico_id          图标ID
  *\param[out]   data            图标数据
  *\param[out]   data_len        图标数据长

@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_ssh2.h
- *\author       xt
- *\version      1.0.0
- *\date         2022.02.08
- *\brief        SSH模块定义,UTF-8(No BOM)
+ *\file     xt_ssh2.h
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    SSH模块定义
  */
 #ifndef _XT_SSH2_
 #define _XT_SSH2_

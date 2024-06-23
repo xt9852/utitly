@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_list.h
- *\author       xt
- *\version      1.0.0
- *\date         2015.8.29
- *\brief        链表数据结构定义,UTF-8(No BOM)
+ *\file     xt_list.h
+ *\author   xt
+ *\version  1.0.0
+ *\date     2015.8.29
+ *\brief    链表数据结构定义
  */
 #ifndef _XT_LIST_H_
 #define _XT_LIST_H_
@@ -29,21 +28,21 @@ typedef struct _xt_list
 } xt_list, *p_xt_list;          ///< 链表类型
 
 /**
- *\brief        链表初始化
+ *\brief                链表初始化
  *\param[in]    list    链表
  *\return       0       成功
  */
 int list_init(p_xt_list list);
 
 /**
- *\brief        链表反初始化
+ *\brief                链表反初始化
  *\param[in]    list    链表
  *\return       0       成功
  */
 int list_uninit(p_xt_list list);
 
 /**
- *\brief        在链表尾部添加数据
+ *\brief                在链表尾部添加数据
  *\param[in]    list    链表
  *\param[in]    data    数据
  *\return       0       成功
@@ -51,7 +50,7 @@ int list_uninit(p_xt_list list);
 int list_tail_push(p_xt_list list, void *data);
 
 /**
- *\brief        从链表头部得到数据
+ *\brief                从链表头部得到数据
  *\param[in]    list    链表
  *\param[out]   list    数据
  *\return       0       成功
@@ -59,7 +58,7 @@ int list_tail_push(p_xt_list list, void *data);
 int list_head_pop(p_xt_list list, void **data);
 
 /**
- *\brief        回调函数
+ *\brief                回调函数
  *\param[in]    data    链表数据
  *\param[in]    param   自定义数据
  *\return       0       成功将继续调用下一个节点\n
@@ -68,7 +67,7 @@ int list_head_pop(p_xt_list list, void **data);
 typedef int (*LIST_PROC)(void *data, void *param);
 
 /**
- *\brief        调用指定的回调函数遍历链表
+ *\brief                调用指定的回调函数遍历链表
  *\param[in]    list    链表
  *\param[in]    proc    回调函数
  *\param[in]    param   自定义数据

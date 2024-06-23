@@ -1,16 +1,15 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_thread_pool.c
- *\author       xt
- *\version      1.0.0
- *\date         2013.8.16
- *\brief        线程池模块实现,UTF-8(No BOM)
+ *\file     xt_thread_pool.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2013.8.16
+ *\brief    线程池模块实现
  */
 #include "xt_thread_pool.h"
 
 /**
- *\brief     线程池线程
- *\return    空
+ *\brief                线程池线程
+ *\return               空
  */
 void* thread_pool_thread(p_xt_thread_pool pool)
 {
@@ -45,7 +44,7 @@ void* thread_pool_thread(p_xt_thread_pool pool)
 }
 
 /**
- *\brief        线程池初始化
+ *\brief                线程池初始化
  *\param[in]    pool    线程池
  *\attention    pool    需要转递到线线程中,不要释放此内存,否则会野指针
  *\param[in]    count   线程数量
@@ -93,7 +92,7 @@ int thread_pool_init(p_xt_thread_pool pool, unsigned int count)
 }
 
 /**
- *\brief        删除线程池任务
+ *\brief                删除线程池任务
  *\param[in]    task    任务
  *\param[in]    param   自定义参数
  *\return       0
@@ -105,7 +104,7 @@ int thread_pool_del_task(p_xt_thread_pool_task task, void *param)
 }
 
 /**
- *\brief        线程池反初始化
+ *\brief                线程池反初始化
  *\param[in]    pool    线程池
  *\return       0       成功
  */
@@ -122,7 +121,7 @@ int thread_pool_uninit(p_xt_thread_pool pool)
 }
 
 /**
- *\brief        添加任务
+ *\brief                添加任务
  *\param[in]    pool    线程池
  *\param[in]    proc    任务回调接口
  *\param[in]    param   任务回调接口参数

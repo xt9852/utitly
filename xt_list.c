@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_list.c
- *\author       xt
- *\version      1.0.0
- *\date         2015.8.29
- *\brief        链表数据结构实现,UTF-8(No BOM)
+ *\file     xt_list.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2015.8.29
+ *\brief    链表数据结构实现
  */
 #include <stdlib.h>
 #include "xt_list.h"
@@ -15,7 +14,7 @@
 #define NODE_SIZE   1024            ///< 节点初始大小
 
 /**
- *\brief        链表初始化
+ *\brief                链表初始化
  *\param[in]    list    链表
  *\return       0       成功
  */
@@ -40,7 +39,7 @@ int list_init(p_xt_list list)
 }
 
 /**
- *\brief        链表反初始化
+ *\brief                链表反初始化
  *\param[in]    list    链表
  *\return       0       成功
  */
@@ -62,7 +61,7 @@ int list_uninit(p_xt_list list)
 }
 
 /**
- *\brief        在链表尾部添加数据
+ *\brief                在链表尾部添加数据
  *\param[in]    list    链表
  *\param[in]    data    数据
  *\return       0       成功
@@ -75,8 +74,6 @@ int list_tail_push(p_xt_list list, void *data)
     }
 
     pthread_mutex_lock(&(list->mutex));
-
-    //D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
 
     if (0 == list->count)
     {
@@ -132,7 +129,7 @@ int list_tail_push(p_xt_list list, void *data)
 }
 
 /**
- *\brief        从链表头部得到数据
+ *\brief                从链表头部得到数据
  *\param[in]    list    链表
  *\param[out]   data    数据
  *\return       0       成功
@@ -176,7 +173,7 @@ int list_head_pop(p_xt_list list, void **data)
 }
 
 /**
- *\brief        调用指定的回调函数遍历链表
+ *\brief                调用指定的回调函数遍历链表
  *\param[in]    list    链表
  *\param[in]    proc    回调函数
  *\param[in]    param   自定义数据

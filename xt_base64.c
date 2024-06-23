@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_base64.c
- *\author       xt
- *\version      1.0.0
- *\date         2012.06.25
- *\brief        BASE64模块实现,UTF-8(No BOM)
+ *\file     xt_base64.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2012.06.25
+ *\brief    BASE64模块实现
  */
 #include "xt_base64.h"
 #include "xt_log.h"
@@ -41,7 +40,7 @@ typedef struct _xt_base64_decode
 } xt_base64_decode, *p_xt_base64_decode;    ///< 从base64转回数据指针
 
 /**
- *\brief      转成BASE64数据
+ *\brief                    转成BASE64数据
  *\param[in]  o             数据
  *\param[in]  i             数据位置
  *\return     0             成功
@@ -60,7 +59,7 @@ unsigned char encode(p_xt_base64_encode o, int i)
 }
 
 /**
- *\brief      从BASE64数据转成原数据
+ *\brief                    从BASE64数据转成原数据
  *\param[in]  o             数据
  *\param[in]  i             数据位置
  *\return     0             成功
@@ -78,7 +77,7 @@ unsigned char decode(p_xt_base64_decode o, int i)
 }
 
 /**
- *\brief      得到BASE64串
+ *\brief                    得到BASE64串
  *\param[in]  data          数据
  *\param[in]  data_len      数据长度
  *\param[out] base64        BASE64字符串
@@ -99,9 +98,6 @@ int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
     int pos_end_data    = times * 3;
 	int pos_end_base64  = times * 4;
 	int len             = (times + (remain > 0 ? 1 : 0) ) * 4;
-
-    //D("times:%d remain:%d padding:%d pos_end_data:%d pos_end_base64:%d len:%d",
-    //     times, remain, padding, pos_end_data, pos_end_base64, len);
 
     if (*base64_len <= len)
     {
@@ -140,7 +136,7 @@ int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
 }
 
 /**
- *\brief      从BASE65串得到数据
+ *\brief                    从BASE65串得到数据
  *\param[in]  base64        BASE64字符串数据
  *\param[in]  base64_len    BASE64字符串数据长度
  *\param[out] data          输出数据缓冲

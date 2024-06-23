@@ -1,10 +1,9 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_ssh2.c
- *\author       xt
- *\version      1.0.0
- *\date         2022.02.08
- *\brief        SSH模块实现,UTF-8(No BOM)
+ *\file     xt_ssh2.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    SSH模块实现
  */
 #include <stdio.h>
 #include <winsock2.h>
@@ -17,9 +16,9 @@
 #include "libssh2_sftp.h"
 
 /**
- *\brief        得到当前时间
- *\param[in]    tm      时间数据
- *\return               无
+ *\brief                    得到当前时间
+ *\param[in]    tm          时间数据
+ *\return                   无
  */
 void get_time(struct tm *tm)
 {
@@ -38,11 +37,11 @@ void get_time(struct tm *tm)
 }
 
 /**
- *\brief        sftp接收数据
- *\param[in]    param   ssh参数数据
- *\param[in]    data    接收到的数据
- *\param[in]    len     接收到的数据长
- *\return       0       成功
+ *\brief                    sftp接收数据
+ *\param[in]    ssh         ssh参数数据
+ *\param[in]    data        接收到的数据
+ *\param[in]    len         接收到的数据长
+ *\return       0           成功
  */
 int ssh_callback(p_xt_ssh ssh, const char *data, size_t len)
 {
@@ -52,7 +51,7 @@ int ssh_callback(p_xt_ssh ssh, const char *data, size_t len)
 }
 
 /**
- *\brief        得到服务地址
+ *\brief                    得到服务地址
  *\param[in]    addr        服务器地址
  *\param[in]    port        服务器端口
  *\param[out]   srv_addr    服务器地址结构
@@ -90,7 +89,7 @@ int get_server_addr(const char *addr, unsigned short port, struct sockaddr_in *s
 }
 
 /**
- *\brief        ssh发送数据
+ *\brief                    ssh发送数据
  *\param[in]    ssh         SSH参数数据
  *\param[in]    data        要发送的数据
  *\param[in]    len         要发送的数据长
@@ -102,7 +101,7 @@ int ssh_send_data(p_xt_ssh ssh, const char *data, unsigned int len)
 }
 
 /**
- *\brief        ssh接收数据
+ *\brief                    ssh接收数据
  *\param[in]    ssh         SSH参数数据
  *\param[out]   data        要接收的数据
  *\param[in]    max         接收数据缓冲区长度
@@ -117,7 +116,7 @@ int ssh_recv_data(p_xt_ssh ssh, char *data, unsigned int max)
 }
 
 /**
- *\brief        发送命令并接收数据
+ *\brief                    发送命令并接收数据
  *\param[in]    ssh         SSH参数数据
  *\param[in]    cmd         命令字符串
  *\param[in]    cmd_len     命令字符串长度
@@ -161,9 +160,9 @@ int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf,
 }
 
 /**
- *\brief        SSH主线函数
- *\param[in]    ssh     参数数据
- *\return               无
+ *\brief                    SSH主线函数
+ *\param[in]    ssh         参数数据
+ *\return                   无
  */
 void ssh_thread(p_xt_ssh ssh)
 {
@@ -375,7 +374,7 @@ shutdown:
 }
 
 /**
- *\brief        SSH初始化
+ *\brief                    SSH初始化
  *\param[in]    proc        显示回调
  *\param[in]    param       显示回调自定义参数
  *\param[out]   ssh         SSH数据
@@ -395,7 +394,7 @@ int ssh_init(XT_SSH_DATA_CALLBACK proc, void *param, p_xt_ssh ssh)
 }
 
 /**
- *\brief        SSH初始化
+ *\brief                    SSH初始化
  *\param[in]    addr        服务器地址
  *\param[in]    port        服务器端口
  *\param[in]    username    用户名称

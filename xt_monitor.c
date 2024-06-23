@@ -1,19 +1,18 @@
 /**
- *\copyright    XT Tech. Co., Ltd.
- *\file         xt_monitor.c
- *\author       xt
- *\version      1.0.0
- *\date         2022.02.08
- *\brief        监控模块实现,UTF-8(No BOM)
+ *\file     xt_monitor.c
+ *\author   xt
+ *\version  1.0.0
+ *\date     2022.02.08
+ *\brief    监控模块实现
  */
-#define  PCRE2_STATIC               // 使用静态库
-#define  PCRE2_CODE_UNIT_WIDTH 8    // 8位宽
+#define  PCRE2_STATIC               ///< 使用静态库
+#define  PCRE2_CODE_UNIT_WIDTH 8    ///< 8位宽
 #include "pcre2.h"
 #include "xt_monitor.h"
 #include "xt_character_set.h"
 
 /**
- *\brief        得到事件对象类型
+ *\brief                    得到事件对象类型
  *\param[in]    path        路径
  *\param[in]    path_len    路径长
  *\param[in]    path_size   路径缓冲区大小
@@ -40,7 +39,7 @@ int monitor_get_event_object(char *path, int path_len, int path_size, const char
 }
 
 /**
- *\brief        处理白名单
+ *\brief                    处理白名单
  *\param[in]    monitor     监控数据
  *\param[in]    txt         文件名
  *\return                   空
@@ -64,7 +63,7 @@ int monitor_whitelist(p_xt_monitor monitor, const char *txt)
 }
 
 /**
- *\brief        处理黑名单
+ *\brief                    处理黑名单
  *\param[in]    monitor     监控数据
  *\param[in]    txt         文件名
  *\return                   空
@@ -88,7 +87,7 @@ int monitor_blacklist(p_xt_monitor monitor, const char* txt)
 }
 
 /**
- *\brief        监控器线程
+ *\brief                    监控器线程
  *\param[in]    monitor     监控数据
  *\return                   空
  */
@@ -248,9 +247,9 @@ void* monitor_thread(p_xt_monitor monitor)
 }
 
 /**
- *\brief        初始化监控器
+ *\brief                    初始化监控器
  *\param[in]    monitor     监控数据
- *\param[in]    event       监控事件列表
+ *\param[in]    list        监控事件列表
  *\param[in]    pool        内存池
  *\return       0           成功
  */
