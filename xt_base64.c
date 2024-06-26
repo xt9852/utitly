@@ -7,7 +7,25 @@
  *\brief    BASE64模块实现
  */
 #include "xt_base64.h"
-#include "xt_log.h"
+#include <stdlib.h>
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
 
 /// base64字符
 const static char BASE64_STR[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -82,32 +100,33 @@ unsigned char decode(p_xt_base64_decode o, int i)
  *\param[in]  data          数据
  *\param[in]  data_len      数据长度
  *\param[out] base64        BASE64字符串
- *\param[out] base64_len    BASE64字符串长度
+ *\param[out] base64_len    输入缓冲区大小,输出BASE64字符串长度
  *\return     0             成功
  */
-int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
+int base64_encode(const unsigned char *data, unsigned int data_len, char *base64, unsigned int *base64_len)
 {
-    if (NULL == data || data_len <=0 || NULL == base64 || *base64_len <= 0)
+    if (NULL == data || NULL == base64)
     {
-        E("param null or buff too small");
+        E("param null\n");
         return -1;
     }
 
-	int times           = data_len / 3;
-	int remain          = data_len % 3;
-	int padding         = remain ? (3 - remain) : 0;    // 需要补齐的数量
-    int pos_end_data    = times * 3;
-	int pos_end_base64  = times * 4;
-	int len             = (times + (remain > 0 ? 1 : 0) ) * 4;
+	unsigned int times           = data_len / 3;
+	unsigned int remain          = data_len % 3;
+	unsigned int padding         = remain ? (3 - remain) : 0;    // 需要补齐的数量
+    unsigned int pos_end_data    = times * 3;
+	unsigned int pos_end_base64  = times * 4;
+	unsigned int len             = (times + (remain > 0 ? 1 : 0) ) * 4;
 
     if (*base64_len <= len)
     {
+        E("buff too small\n");
         return -2;
     }
 
 	p_xt_base64_encode item = (p_xt_base64_encode)data;
 
-	for (int i = 0; i < times; i++)
+	for (unsigned int i = 0; i < times; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
@@ -120,12 +139,12 @@ int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
 	xt_base64_encode tail = {0};
 	memcpy(&tail, &data[pos_end_data], remain);
 
-	for (int i = 0; i < remain + 1; i++)    // 因为1个字节变成base64时大于1位所以加1
+	for (unsigned int i = 0; i < remain + 1; i++)    // 因为1个字节变成base64时大于1位所以加1
 	{
 		base64[pos_end_base64 + i] = BASE64_STR[encode(&tail, i)];
 	}
 
-	for (int i = 0; i < padding; i++)
+	for (unsigned int i = 0; i < padding; i++)
 	{
 		base64[len - padding + i] = 0x3d;   // '='
 	}
@@ -138,26 +157,26 @@ int base64_encode(const char *data, int data_len, char *base64, int *base64_len)
 
 /**
  *\brief                    从BASE65串得到数据
- *\param[in]  base64        BASE64字符串数据
- *\param[in]  base64_len    BASE64字符串数据长度
- *\param[out] data          输出数据缓冲
- *\param[out] data_len      输出数据缓冲区大小
+ *\param[in]  base64        BASE64字符串
+ *\param[in]  base64_len    BASE64字符串长度
+ *\param[out] data          数据
+ *\param[out] data_len      输入缓冲区大小,输出数据长度
  *\return     0             成功
  */
-int base64_decode(const char *base64, int base64_len, char *data, int *data_len)
+int base64_decode(const char *base64, unsigned int base64_len, unsigned char *data, unsigned int *data_len)
 {
-    if (NULL == base64 || base64_len <= 0 || NULL == data || *data_len <=0)
+    if (NULL == base64 || 0 == base64_len || NULL == data || *data_len < (base64_len + 3) / 4 * 3)
     {
-        E("param null or buff too small");
+        E("param null or buff too small\n");
         return -1;
     }
 
-    int count = 0;
-    int padding = 0;
-    char *buff = (char*)malloc(base64_len);
+    unsigned int count = 0;
+    unsigned int padding = 0;
+    unsigned char *buff = (unsigned char*)malloc(base64_len);
 
     // 将字符串转成6bit
-	for (int i = 0; i < base64_len; i++)
+	for (unsigned int i = 0; i < base64_len; i++)
 	{
 		if ((base64[i] >= 'A') && (base64[i] <= 'Z'))
 		{
@@ -186,10 +205,10 @@ int base64_decode(const char *base64, int base64_len, char *data, int *data_len)
 		}
 	}
 
-	int times = count / 4;
+	unsigned int times = count / 4;
 	p_xt_base64_decode item = (p_xt_base64_decode)buff;
 
-	for (int i = 0; i < times; i++)
+	for (unsigned int i = 0; i < times; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
@@ -204,6 +223,6 @@ int base64_decode(const char *base64, int base64_len, char *data, int *data_len)
     *data_len = times * 3 - padding;
     data[*data_len] = '\0';
 
-    //D("times:%d padding:%d len:%d", times, padding, *data_len);
+    D("times:%d padding:%d len:%d\n", times, padding, *data_len);
 	return 0;
 }

@@ -8,9 +8,12 @@
  */
 #ifndef _XT_MONITOR_H_
 #define _XT_MONITOR_H_
-#include "xt_log.h"
 #include "xt_list.h"
 #include "xt_memory_pool.h"
+
+#ifndef bool
+#define bool unsigned char
+#endif
 
 #define WHITELIST_SIZE      32                                         ///< 白名单组数大小
 #define BLACKLIST_SIZE      32                                         ///< 黑名单组数大小

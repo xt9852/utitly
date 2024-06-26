@@ -10,7 +10,25 @@
 #include <time.h>
 #include "xt_timer.h"
 #include "xt_list.h"
-#include "xt_log.h"
+#include "xt_utitly.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
 
 /**
  *\brief                    检查定时器
@@ -28,7 +46,7 @@ int timer_check(p_xt_timer timer, void *param)
         {
             timer->cycle_next += timer->cycle_second;
 
-            D("触发定时器 name:%s now:%u next:%u", timer->name, now, timer->cycle_next);
+            D("name:%s now:%u next:%u\n", timer->name, now, timer->cycle_next);
 
             thread_pool_put(timer->thread_pool, timer->task.proc, timer->task.param);
         }
@@ -59,7 +77,7 @@ int timer_check(p_xt_timer timer, void *param)
             ((TIMER_CRON_HOUR   == timer->type) && ((mask&0x03) == 0x03)) ||    // 每时的min分sec秒执行任务
             ((TIMER_CRON_MINUTE == timer->type) && ((mask&0x01) == 0x01)))      // 每分的sec秒执行任务
         {
-            D("触发定时器 name:%s y:%d w:%d m:%d d:%d h:%d m:%d s:%d",
+            D("name:%s y:%d w:%d m:%d d:%d h:%d m:%d s:%d",
                  timer->name,
                  tm.tm_yday,
                  tm.tm_wday,
@@ -75,32 +93,32 @@ int timer_check(p_xt_timer timer, void *param)
             {
             case TIMER_CRON_YDAY:
                 {
-                    D("每年的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_yday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every year %d day %d:%d:%d : %s\n", timer->cron_yday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_WDAY:
                 {
-                    D("每周的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_wday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every week %d day %d:%d:%d : %s\n", timer->cron_wday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_YEAR:
                 {
-                    D("每年的第%d月第%d天的%d时%d分%d秒执行任务:%s", timer->cron_mon, timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every year %d-%d %d:%d:%d : %s\n", timer->cron_mon, timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_MON:
                 {
-                    D("每月的第%d天的%d时%d分%d秒执行任务:%s", timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every month %d day %d:%d:%d : %s\n", timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_DAY:
                 {
-                    D("每天的第%d时%d分%d秒执行任务:%s", timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every day %d:%d:%d : %s\n", timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_HOUR:
                 {
-                    D("每时的第%d分%d秒执行任务:%s", timer->cron_min, timer->cron_sec, timer->name);
+                    D("%d:%d : %s\n", timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             }
@@ -117,7 +135,7 @@ int timer_check(p_xt_timer timer, void *param)
  */
 void* timer_thread(p_xt_timer_set set)
 {
-    D("begin");
+    D("begin\n");
 
     unsigned int now;
     unsigned int sec = 0;
@@ -135,12 +153,12 @@ void* timer_thread(p_xt_timer_set set)
 
         sec = now;
 
-        //D("%u", now);
+        //D("%u\n", now);
 
         list_proc(&(set->timer_list), timer_check, (void*)now);
     }
 
-    D("exit");
+    D("exit\n");
     return NULL;
 }
 
@@ -181,7 +199,7 @@ int timer_init(p_xt_timer_set set)
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    D("ok");
+    D("ok\n");
     return 0;
 }
 

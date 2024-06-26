@@ -8,9 +8,37 @@
  */
 #define  PCRE2_STATIC               ///< 使用静态库
 #define  PCRE2_CODE_UNIT_WIDTH 8    ///< 8位宽
+#include <string.h>
+#include <windows.h>
 #include "pcre2.h"
 #include "xt_monitor.h"
 #include "xt_character_set.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
+
+#ifndef true
+#define true    1
+#endif
+
+#ifndef false
+#define false   0
+#endif
 
 /**
  *\brief                    得到事件对象类型
@@ -59,7 +87,7 @@ int monitor_whitelist(p_xt_monitor monitor, const char *txt)
         }
     }
 
-    E("whitelist fail %s", txt);
+    E("whitelist fail %s\n", txt);
     return -1;
 }
 
@@ -79,7 +107,7 @@ int monitor_blacklist(p_xt_monitor monitor, const char* txt)
 
         if (ret > 0) // <0发生错误，==0没有匹配上，>0返回匹配到的元素数量
         {
-            E("blacklist ok %s", txt);
+            E("blacklist ok %s\n", txt);
             return -1;
         }
     }
@@ -94,7 +122,7 @@ int monitor_blacklist(p_xt_monitor monitor, const char* txt)
  */
 void* monitor_thread(p_xt_monitor monitor)
 {
-    D("begin");
+    D("begin\n");
 
     // 打开目录,得到目录的句柄
     HANDLE handle = CreateFileA(monitor->localpath,
@@ -107,11 +135,11 @@ void* monitor_thread(p_xt_monitor monitor)
 
     if (handle == INVALID_HANDLE_VALUE)
     {
-        E("monit %s fail", monitor->localpath);
+        E("monit %s fail\n", monitor->localpath);
         return (void*)-1;
     }
 
-    D("monit %s ok", monitor->localpath);
+    D("monit %s ok\n", monitor->localpath);
 
     int buf_len = 10 * 1024 * 1024;
     char *buf = malloc(buf_len);
@@ -135,7 +163,7 @@ void* monitor_thread(p_xt_monitor monitor)
 
     while (monitor->run)
     {
-        D("ReadDirectoryChangesW");
+        D("ReadDirectoryChangesW\n");
 
         notify = (FILE_NOTIFY_INFORMATION*)buf;
 
@@ -152,20 +180,20 @@ void* monitor_thread(p_xt_monitor monitor)
             NULL,
             NULL))
         {
-            E("ReadDirectoryChangesW fail,%d", GetLastError());
+            E("ReadDirectoryChangesW fail,%d\n", GetLastError());
             Sleep(100);
             continue;
         }
 
         if (0 == ret)
         {
-            E("ReadDirectoryChangesW fail,overflow");
+            E("ReadDirectoryChangesW fail,overflow\n");
             continue;
         }
 
         while (monitor->run)
         {
-            D("NextEntryOffset:%d", notify->NextEntryOffset);
+            D("NextEntryOffset:%d\n", notify->NextEntryOffset);
 
             cmd = EVENT_CMD_NULL;
             len = MNT_OBJNAME_SIZE;
@@ -173,7 +201,7 @@ void* monitor_thread(p_xt_monitor monitor)
             unicode_utf8(notify->FileName, notify->FileNameLength / 2, obj_name, &len);
             obj_type = monitor_get_event_object(path, path_len, MNT_OBJNAME_SIZE, obj_name);
 
-            D("name:%s type:%d", obj_name, obj_type);
+            D("name:%s type:%d\n", obj_name, obj_type);
 
             switch (notify->Action)
             {
@@ -199,7 +227,7 @@ void* monitor_thread(p_xt_monitor monitor)
                 }
                 case FILE_ACTION_MODIFIED: // 修改文件,同时可能会有多个修改命令
                 {
-                    D("FILE_ACTION_MODIFIED newname:%s oldname:%s type:%d last_cmd:%d last_tick:%u",
+                    D("FILE_ACTION_MODIFIED newname:%s oldname:%s type:%d last_cmd:%d last_tick:%u\n",
                     obj_name, obj_oldname, obj_type, last_cmd, last_tick);
 
                     if (EVENT_CMD_MODIFY == last_cmd &&
@@ -207,7 +235,7 @@ void* monitor_thread(p_xt_monitor monitor)
                         0 == strcmp(obj_name, obj_oldname) &&
                         (GetTickCount() - last_tick) < 500)
                     {
-                        D("SAME");
+                        D("SAME\n");
                     }
                     else
                     {
@@ -222,7 +250,7 @@ void* monitor_thread(p_xt_monitor monitor)
             {
                 last_cmd = cmd;
                 last_tick = GetTickCount();
-                D("send event tick:%u obj:%d cmd:%u name:%s", last_tick, obj_type, last_cmd, obj_name);
+                D("send event tick:%u obj:%d cmd:%u name:%s\n", last_tick, obj_type, last_cmd, obj_name);
 
                 memory_pool_get(monitor->pool, &event);
                 event->cmd        = cmd;
@@ -243,7 +271,7 @@ void* monitor_thread(p_xt_monitor monitor)
 
     }
 
-    D("exit");
+    D("exit\n");
     return NULL;
 }
 
@@ -274,7 +302,7 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
         if (pcre_data == NULL)
         {
             pcre2_get_error_message(error, info, sizeof(info));
-            E("pcre2_compile fail reg:%s off:%d info:%s", monitor->whitelist[i], offset, info);
+            E("pcre2_compile fail reg:%s off:%d info:%s\n", monitor->whitelist[i], offset, info);
             return -2;
         }
 
@@ -283,7 +311,7 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
         if (NULL == match_data)
         {
             pcre2_get_error_message(error, info, sizeof(info));
-            E("pcre2_match_data_create_from_pattern:fail reg:%s", monitor->whitelist[i]);
+            E("pcre2_match_data_create_from_pattern:fail reg:%s\n", monitor->whitelist[i]);
             return -3;
         }
 
@@ -298,7 +326,7 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
         if (pcre_data == NULL)
         {
             pcre2_get_error_message(error, info, sizeof(info));
-            E("pcre2_compile fail reg:%s off:%d info:%s", monitor->blacklist[i], offset, info);
+            E("pcre2_compile fail reg:%s off:%d info:%s\n", monitor->blacklist[i], offset, info);
             return -4;
         }
 
@@ -307,7 +335,7 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
         if (NULL == match_data)
         {
             pcre2_get_error_message(error, info, sizeof(info));
-            E("pcre2_match_data_create_from_pattern:fail reg:%s", monitor->blacklist[i]);
+            E("pcre2_match_data_create_from_pattern:fail reg:%s\n", monitor->blacklist[i]);
             return -5;
         }
 
@@ -325,12 +353,12 @@ int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
 
     if (error != 0)
     {
-        E("create thread fail, error:%d", error);
+        E("create thread fail, error:%d\n", error);
         return -6;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    D("ok");
+    D("ok\n");
     return 0;
 }

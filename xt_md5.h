@@ -9,7 +9,6 @@
 #ifndef _XT_MD5_H_
 #define _XT_MD5_H_
 
-
 typedef struct _xt_md5      ///  md5数据结构
 {
     unsigned int    A;      ///< 变量A
@@ -26,7 +25,7 @@ typedef struct _xt_md5      ///  md5数据结构
  *\param[out]   md5         MD5数据
  *\return       0           成功
  */
-int md5_get(const char *data, int data_len, p_xt_md5 md5);
+int md5_get(const unsigned char *data, int data_len, p_xt_md5 md5);
 
 /**
  *\brief                    得到MD5字符串
@@ -35,6 +34,6 @@ int md5_get(const char *data, int data_len, p_xt_md5 md5);
  *\param[out]   md5_str     MD5字符串,大写字母
  *\return       0           成功
  */
-int md5_get_str(const char *data, int data_len, char *md5_str);
+int md5_get_str(const unsigned char *data, int data_len, char *md5_str);
 
 #endif

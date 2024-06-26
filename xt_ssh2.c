@@ -12,9 +12,28 @@
 #include <ws2tcpip.h>
 #include <time.h>
 #include "xt_ssh2.h"
+#include "xt_utitly.h"
 #include "libssh2_config.h"
 #include "libssh2.h"
 #include "libssh2_sftp.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
 
 /**
  *\brief                    得到当前时间
@@ -74,7 +93,7 @@ int get_server_addr(const char *addr, unsigned short port, struct sockaddr_in *s
 
     if (ret != 0)
     {
-        E("getaddrinfo:%s:%d %s", addr, port, gai_strerrorA(ret));
+        E("getaddrinfo:%s:%d %s\n", addr, port, gai_strerrorA(ret));
         return -2;
     }
 
@@ -112,7 +131,7 @@ int ssh_recv_data(p_xt_ssh ssh, char *data, unsigned int max)
 {
     int ret = (int)libssh2_channel_read(ssh->channel, data, max - 1);
     data[(ret > 0) ? ret : 0] = '\0';
-    D("%s len:%d", data, ret);
+    D("%s len:%d\n", data, ret);
     return ret;
 }
 
@@ -127,26 +146,28 @@ int ssh_recv_data(p_xt_ssh ssh, char *data, unsigned int max)
  */
 int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf, unsigned int buf_size)
 {
-    int ret = 0;
-
-    if (cmd_len > 0)
+    if (NULL == ssh || NULL == cmd || NULL == buf || !ssh->init)
     {
-        D(cmd);
-        ret = ssh_send_data(ssh, cmd, cmd_len);
+        E("param is null\n");
+        return -1;
     }
+
+    D("%s\n", cmd);
+
+    int ret = ssh_send_data(ssh, cmd, cmd_len);
 
     if (ret < 0)
     {
-        E("cmd:%s error ret:%d", cmd, ret);
-        return -1;
+        E("cmd:%s error ret:%d\n", cmd, ret);
+        return -2;
     }
 
     ret = ssh_send_data(ssh, "\r", 1);
 
     if (ret < 0)
     {
-        E("cmd:\\r error ret:%d", ret);
-        return -2;
+        E("cmd:\\r error ret:%d\n", ret);
+        return -3;
     }
 
     msleep(50);
@@ -174,7 +195,7 @@ void ssh_thread(p_xt_ssh ssh)
     LIBSSH2_SESSION    *session = NULL;
     LIBSSH2_CHANNEL    *channel = NULL;
 
-    D("begin");
+    D("begin\n");
 
 #ifdef WIN32
     WSADATA wsadata;
@@ -185,25 +206,25 @@ void ssh_thread(p_xt_ssh ssh)
 
     if (0 != rc)
     {
-        info = "get addr fail";
+        info = "get addr fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         return;
     }
 
-    D("addr %s:%u ok", ssh->addr, ssh->port);
+    D("addr %s:%u ok\n", ssh->addr, ssh->port);
 
     int sock = (int)socket(AF_INET, SOCK_STREAM, 0);
 
     if (0 != connect(sock, (struct sockaddr*)(&srv_addr), sizeof(struct sockaddr_in)))
     {
-        info = "connect fail";
+        info = "connect fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         return;
     }
 
-    D("conn %s:%u ok", ssh->addr, ssh->port);
+    D("conn %s:%u ok\n", ssh->addr, ssh->port);
 
     // 建立连接
     // 版本协商 明文传输,格式:SSH-<主协议版本号>.<次协议版本号>-<软件版本号>
@@ -217,67 +238,67 @@ void ssh_thread(p_xt_ssh ssh)
 
     if (0 != rc)
     {
-        info = "libssh2 init fail";
+        info = "libssh2 init fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         return;
     }
 
-    D("libssh2 init ok");
+    D("libssh2 init ok\n");
 
     session = libssh2_session_init();
 
     if (NULL == session)
     {
-        info = "session init fail";
+        info = "session init fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         return;
     }
 
-    D("session init ok");
+    D("session init ok\n");
 
     if (libssh2_session_handshake(session, sock))
     {
-        info = "session handshake fail";
+        info = "session handshake fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         return;
     }
 
-    D("session handshake ok");
+    D("session handshake ok\n");
 
     auth = libssh2_userauth_list(session, ssh->username, (int)strlen(ssh->username));
 
-    D("userauth:%s", auth);
+    D("userauth:%s\n", auth);
 
     if (NULL != strstr(auth, "password"))
     {
         if (libssh2_userauth_password(session, ssh->username, ssh->password))
         {
-            info = "userauth password fail";
+            info = "userauth password fail\n";
             ssh_callback(ssh, info, strlen(info));
             E(info);
             goto shutdown;
         }
 
-        D("userauth password ok");
+        D("userauth password ok\n");
     }
     else if (NULL != strstr(auth, "publickey"))
     {
         if (libssh2_userauth_publickey_fromfile(session, ssh->username, "~/.ssh/id_rsa.pub", "~/.ssh/id_rsa", ssh->password))
         {
-            info = "userauth publickey fail";
+            info = "userauth publickey fail\n";
             ssh_callback(ssh, info, strlen(info));
             E(info);
             goto shutdown;
         }
 
-        D("userauth publickey ok");
+        D("userauth publickey ok\n");
     }
     else
     {
-        info = "userauth no support";
+        info = "userauth no support\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         goto shutdown;
@@ -287,28 +308,28 @@ void ssh_thread(p_xt_ssh ssh)
 
     if (NULL == channel)
     {
-        info = "channel open fail";
+        info = "channel open fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         goto shutdown;
     }
 
-    D("channel open ok");
+    D("channel open ok\n");
 
     // pty虚拟终端,vanilla不带格式
     if (libssh2_channel_request_pty(channel, "vanilla")) // ansi带格式
     {
-        info = "channel pty fail";
+        info = "channel pty fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         goto shutdown;
     }
 
-    D("channel pty ok");
+    D("channel pty ok\n");
 
     if (libssh2_channel_shell(channel))
     {
-        info = "channel shell fail";
+        info = "channel shell fail\n";
         ssh_callback(ssh, info, strlen(info));
         E(info);
         goto shutdown;
@@ -318,7 +339,7 @@ void ssh_thread(p_xt_ssh ssh)
     ssh->session = session;
     ssh->channel = channel;
 
-    D("channel shell ok");
+    D("channel shell ok\n");
 
     int len;
     char buf[10240];
@@ -339,7 +360,7 @@ void ssh_thread(p_xt_ssh ssh)
         msleep(ssh->cmd[i].sleep);
     }
 
-    D("init cmd over");
+    D("init cmd over\n");
 
     // 主循环,60秒无操作时发送回车
     while (ssh->run)
@@ -365,7 +386,7 @@ shutdown:
     closesocket(sock);
     libssh2_exit();
 
-    info = "exit";
+    info = "exit\n";
     ssh_callback(ssh, info, strlen(info));
     D(info);
 
@@ -390,7 +411,7 @@ int ssh_init(XT_SSH_DATA_CALLBACK proc, void *param, p_xt_ssh ssh)
 
     _beginthread(ssh_thread, 0, ssh);
 
-    D("ok");
+    D("ok\n");
     return 0;
 }
 
@@ -415,7 +436,7 @@ int ssh_init_ex(const char *addr, unsigned short port, const char *username, con
         (cmd_count > 0 && NULL == cmd) ||
         NULL == proc || NULL == ssh)
     {
-        E("param is null");
+        E("param is null\n");
         return -1;
     }
 
@@ -1784,12 +1805,12 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
 {
     if (NULL == ssh || NULL == local || NULL == remote || !ssh->init)
     {
-        E("param is null");
+        E("param is null\n");
         return -1;
     }
 
-    D(local);
-    D(remote);
+    D("%s\n", local);
+    D("%s\n", remote);
 
     file_info file = {0};
     strcpy_s(file.filename, sizeof(file.filename) - 1, remote);
@@ -1799,7 +1820,7 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
 
     if (NULL == fp)
     {
-        E("open %s fail", local);
+        E("open %s fail\n", local);
         return -2;
     }
 
@@ -1818,7 +1839,7 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
 
     if (0 != ret)
     {
-        E("send cmd:%s fail", buf);
+        E("send cmd:%s fail\n", buf);
         return -3;
     }
 
@@ -1828,16 +1849,16 @@ int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote)
 
     if (0 != ret)
     {
-        E("zmodem_put fail");
+        E("zmodem_put fail\n");
         return -5;
     }
 
-    D("ok");
+    D("ok\n");
     return 0;
 }
 
 /**
- *\brief        SSH的sz命令下载文件
+ *\brief                    SSH的sz命令下载文件
  *\param[in]    ssh         SSH数据
  *\param[in]    remote      远端文件名
  *\param[in]    local       本地文件名
@@ -1847,12 +1868,12 @@ int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
 {
     if (NULL == ssh || NULL == local || NULL == remote || !ssh->init)
     {
-        E("param is null");
+        E("param is null\n");
         return -1;
     }
 
-    D(local);
-    D(remote);
+    D("%s\n", local);
+    D("%s\n", remote);
 
     char cmd[1024];
     char buf[10240];
@@ -1864,7 +1885,7 @@ int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
 
     if (0 != ret)
     {
-        E("send cmd:%s fail", buf);
+        E("send cmd:%s fail\n", buf);
         return -2;
     }
 
@@ -1873,7 +1894,7 @@ int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
     if (0 != ret)
     {
         free(file.data);
-        E("zmodem_get fail");
+        E("zmodem_get fail\n");
         return -3;
     }
 
@@ -1883,7 +1904,7 @@ int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
     if (NULL == fp)
     {
         free(file.data);
-        E("open %s fail", local);
+        E("open %s fail\n", local);
         return -4;
     }
 
@@ -1891,6 +1912,6 @@ int ssh_send_cmd_sz(p_xt_ssh ssh, const char *remote, const char *local)
     fclose(fp);
     free(file.data);
 
-    D("ok");
+    D("ok\n");
     return 0;
 }

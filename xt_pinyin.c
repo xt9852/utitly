@@ -10,7 +10,36 @@
 #include <stdlib.h>
 #include <string.h>
 #include <Windows.h>
-#include "xt_log.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
+
+#ifndef bool
+#define bool unsigned char
+#endif
+
+#ifndef true
+#define true    1
+#endif
+
+#ifndef false
+#define false   0
+#endif
 
 bool            g_pinyin_malloc = false;    ///< 拼音数据是于malloc分配的
 
@@ -148,7 +177,7 @@ int pinyin_init(const char *filename)
 {
     if (NULL == filename)
     {
-        D("%s filename is null");
+        D("%s filename is null\n", filename);
         return -1;
     }
 
@@ -157,7 +186,7 @@ int pinyin_init(const char *filename)
 
     if (NULL == fp)
     {
-        D("open file:%s error:%d", filename, GetLastError());
+        D("open file:%s error:%d\n", filename, GetLastError());
         return -1;
     }
 
@@ -179,7 +208,7 @@ int pinyin_init(const char *filename)
 
     g_pinyin_malloc = true;
 
-    D("ok");
+    D("ok\n");
     return 0;
 }
 

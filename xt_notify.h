@@ -8,6 +8,7 @@
  */
 #ifndef _XT_SYS_ICON_H_
 #define _XT_SYS_ICON_H_
+#include <windows.h>
 
 typedef void (*XT_NOTIFY_MENU_CALLBACK)(HWND wnd, void*); ///< 托盘菜单回调接口
 

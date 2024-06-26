@@ -8,7 +8,24 @@
  */
 #include <stdlib.h>
 #include "xt_list.h"
-#include "xt_log.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
 
 #define SV          sizeof(void*)   ///< void指针大小
 
@@ -97,13 +114,13 @@ int list_tail_push(p_xt_list list, void *data)
 
         if (list->head <= list->tail)           // 头节点在尾节点前面
         {
-            D("add array old size:%d head:%d <= tail:%d", old_size, list->head, list->tail);
+            D("add array old size:%d head:%d <= tail:%d\n", old_size, list->head, list->tail);
             memcpy(list->data, old_data, SV * old_size);
-            D("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
+            D("add array new size:%d head:%d tail:%d\n", list->size, list->head, list->tail);
         }
         else
         {
-            D("add array old size:%d head:%d > tail:%d", old_size, list->head, list->tail);
+            D("add array old size:%d head:%d > tail:%d\n", old_size, list->head, list->tail);
 
             int cnt = old_size + list->head;
             int head = list->size - cnt;
@@ -111,7 +128,7 @@ int list_tail_push(p_xt_list list, void *data)
             memcpy(&list->data[list->size - cnt], &old_data[list->head], SV * cnt);
             list->head = head;
 
-            D("add array new size:%d head:%d tail:%d", list->size, list->head, list->tail);
+            D("add array new size:%d head:%d tail:%d\n", list->size, list->head, list->tail);
         }
 
         free(old_data);
@@ -122,7 +139,7 @@ int list_tail_push(p_xt_list list, void *data)
 
     list->count++;
 
-    //D("size:%d count:%d head:%d tail:%d", list->size, list->count, list->head, list->tail);
+    D("size:%d count:%d head:%d tail:%d\n", list->size, list->count, list->head, list->tail);
 
     pthread_mutex_unlock(&(list->mutex));
 

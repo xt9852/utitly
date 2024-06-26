@@ -6,8 +6,26 @@
  *\date     2015.8.29
  *\brief    内存池模块实现
  */
-#include "xt_memory_pool.h"
 #include <stdlib.h>
+#include "xt_memory_pool.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
 
 /**
  *\brief                初始化内存池

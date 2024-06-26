@@ -7,6 +7,25 @@
  *\brief    线程池模块实现
  */
 #include "xt_thread_pool.h"
+#include "xt_utitly.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
 
 /**
  *\brief                线程池线程
@@ -14,7 +33,7 @@
  */
 void* thread_pool_thread(p_xt_thread_pool pool)
 {
-    D("begin");
+    D("begin\n");
 
     p_xt_thread_pool_task task;
 
@@ -36,11 +55,11 @@ void* thread_pool_thread(p_xt_thread_pool pool)
         }
         else
         {
-            E("get task null");
+            E("get task null\n");
         }
     }
 
-    D("exit");
+    D("exit\n");
     return NULL;
 }
 
@@ -88,7 +107,7 @@ int thread_pool_init(p_xt_thread_pool pool, unsigned int count)
         pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
     }
 
-    D("ok");
+    D("ok\n");
     return 0;
 }
 

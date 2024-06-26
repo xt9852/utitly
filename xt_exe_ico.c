@@ -8,11 +8,21 @@
  */
 #include <windows.h>
 #include "xt_exe_ico.h"
-#include "xt_log.h"
 
-#define RT_GROUP_ICONA   MAKEINTRESOURCEA((ULONG_PTR)(RT_ICON) + DIFFERENCE)    ///< 程序图标组
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#endif
 
-#define RT_ICONA         MAKEINTRESOURCEA(3)                                    ///< 程序图标
+#define RT_GROUP_ICONA  MAKEINTRESOURCEA((ULONG_PTR)(RT_ICON) + DIFFERENCE) ///< 程序图标组
+
+#define RT_ICONA        MAKEINTRESOURCEA(3)                                 ///< 程序图标
 
 /**
  *\brief                        得到exe中图标数据
@@ -74,7 +84,7 @@ void exe_ico_update_entry(unsigned char *in, unsigned int in_len, unsigned char 
     unsigned int   img_len = 0;
     unsigned int   img_total_len = 0;
 
-    D("icon img count:%d", img_count);
+    D("icon img count:%d\n", img_count);
 
     memcpy(out, in, 6); // 图标文件头
 
@@ -86,7 +96,7 @@ void exe_ico_update_entry(unsigned char *in, unsigned int in_len, unsigned char 
 
         img_len = *(unsigned int*)(p_in_entry + 8);
 
-        D("img entry id:%d len:%d pos:%d", i, img_len, img_pos);
+        D("img entry id:%d len:%d pos:%d\n", i, img_len, img_pos);
 
         img_pos += img_len;
         img_total_len += img_len;
@@ -97,7 +107,7 @@ void exe_ico_update_entry(unsigned char *in, unsigned int in_len, unsigned char 
 
     *out_len = in_len + img_count * 2;
 
-    D("in_len:%d out_len:%d", in_len, *out_len);
+    D("in_len:%d out_len:%d\n", in_len, *out_len);
 }
 
 /**
@@ -133,7 +143,7 @@ int exe_ico_get_data(unsigned int ico_id, unsigned char *data, unsigned int *dat
     {
         exe_ico_get_item(i + 1, data + pos, data_len);
 
-        D("get img data id:%d len:%d", i, *data_len);
+        D("get img data id:%d len:%d\n", i, *data_len);
 
         pos += *data_len;
     }

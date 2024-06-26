@@ -8,8 +8,11 @@
  */
 #ifndef _XT_THEAD_POOL_H
 #define _XT_THEAD_POOL_H
-#include "xt_log.h"
 #include "xt_list.h"
+
+#ifndef bool
+#define bool unsigned char
+#endif
 
 typedef void (*XT_THREAD_POOL_TASK_CALLBACK)(void*);    ///< 线程池回调接口
 

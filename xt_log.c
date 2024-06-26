@@ -6,9 +6,9 @@
  *\date     2016.12.07
  *\brief    日志模块实现
  */
+#include <pthread.h>
 #include "xt_log.h"
 #include "xt_utitly.h"
-#include <pthread.h>
 
 #define LOG_BUFF_SIZE   10240               ///< 日志缓冲区在小
 
@@ -22,7 +22,7 @@ const static char XT_LOG_LEVEL[] = "DIWE";  ///< 日志级别字符
  *\param[in]    max         文件名最长
  *\return                   无
  */
-void log_set_filename(p_xt_log log, time_t timestamp, char *filename, int max)
+void log_get_filename(p_xt_log log, time_t timestamp, char *filename, int max)
 {
     struct tm tm;
     localtime_s(&tm, &timestamp);
@@ -54,16 +54,16 @@ void log_set_filename(p_xt_log log, time_t timestamp, char *filename, int max)
  *\param[in]    clean       是否清空日志文件
  *\return       0           成功
  */
-int log_add_new(p_xt_log log, int timestamp, bool clean)
+int log_add_new(p_xt_log log, time_t timestamp, bool clean)
 {
-    char filename[LOG_FILENAME_SIZE];
-
-    log_set_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
-
     if (NULL != log->file)
     {
         fclose(log->file);
     }
+
+    char filename[LOG_FILENAME_SIZE];
+
+    log_get_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
 
     return fopen_s(&(log->file), filename, clean ? "wb+" : "ab+");
 }
@@ -74,127 +74,69 @@ int log_add_new(p_xt_log log, int timestamp, bool clean)
  *\param[in]    timestamp   时间戳
  *\return                   无
  */
-void log_del_old(p_xt_log log, int timestamp)
+void log_del_old(p_xt_log log, time_t timestamp)
 {
-    char filename[LOG_FILENAME_SIZE] = "";
+    char filename[LOG_FILENAME_SIZE];
 
-    log_set_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
+    log_get_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
 
     _unlink(filename);      // 删除旧文件
 
-    DD(log, "unlink %s", filename);
+    DD(log, "unlink %s\n", filename);
 }
 
 /**
- *\brief                    删除过期日志文件
+ *\brief                    删除过期日志文件,查找文件创建时间小于删除时间的文件
  *\param[in]    log         日志数据
  *\return                   无
  */
 void log_del_file(p_xt_log log)
 {
-    int cnt;
-    char *mask;
-    unsigned int del;
-    unsigned int now = (unsigned int)time(NULL);
+    char                fmt[LOG_FILENAME_SIZE];
+    struct tm           file_time;
+    unsigned int        file_second;
+    unsigned int        unit[] = { 60,  3600, 86400, 604800 };
+    unsigned int        del_second = (unsigned int)time(NULL) - log->backup * unit[log->cycle];
+    WIN32_FIND_DATAA    find;
 
-    switch (log->cycle)
+    DD(log, "del_second:%u\n", del_second);
+
+    snprintf(fmt, LOG_FILENAME_SIZE, "%s\\%s.????????????.txt", log->path, log->filename);
+    DD(log, "find fmt:%s\n", fmt);
+
+    HANDLE handle = FindFirstFileA(fmt, &find);
+
+    if (INVALID_HANDLE_VALUE == handle)
     {
-        case LOG_CYCLE_MINUTE:
-        {
-            cnt = 12;
-            mask = "????????????";
-            del = now - log->backup * 60;
-            break;
-        }
-        case LOG_CYCLE_HOUR:
-        {
-            cnt = 10;
-            mask = "??????????";
-            del = now - log->backup * 3600;
-            break;
-        }
-        case LOG_CYCLE_DAY:
-        {
-            cnt = 8;
-            mask = "????????";
-            del = now - log->backup * 86400;
-            break;
-        }
-        case LOG_CYCLE_WEEK:
-        {
-            cnt = 8;
-            mask = "????????";
-            del = now - log->backup * 604800;
-            break;
-        }
-        default:
-        {
-            return;
-        }
-    }
-
-    // 查找文件删除时间小于del的文件
-    char        *end;
-    char         tmp[LOG_FILENAME_SIZE];
-    unsigned int sec;
-
-    struct tm t;
-    WIN32_FIND_DATAA data;
-
-    snprintf(tmp, LOG_FILENAME_SIZE, "%s\\%s.%s.txt", log->path, log->filename, mask);
-
-    HANDLE err = FindFirstFileA(tmp, &data);
-
-    if (err == INVALID_HANDLE_VALUE)
-    {
-        printf("FindFirstFileA error!");
+        EE(log, "FindFirstFileA error!\n");
         return;
     }
 
+    snprintf(fmt, LOG_FILENAME_SIZE, "%s.%%04d%%02d%%02d%%02d%%02d.txt", log->filename);
+    DD(log, "sscanf fmt:%s\n", fmt);
+
     do
     {
-        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+        if (find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { continue; }
+
+        memset(&file_time, 0, sizeof(file_time));
+        sscanf_s(find.cFileName, fmt, &file_time.tm_year, &file_time.tm_mon, &file_time.tm_mday, &file_time.tm_hour, &file_time.tm_min);
+
+        file_time.tm_mon -= 1;      // 月(0-11)
+        file_time.tm_year -= 1900;  // 自1900年起
+        file_second = (unsigned int)mktime(&file_time);
+
+        DD(log, "%s second:%u\n", find.cFileName, file_second);
+
+        if (file_second <= del_second)
         {
-            continue;
-        }
-
-        end = strrchr(data.cFileName, '.');
-        strncpy_s(tmp, LOG_FILENAME_SIZE, end - cnt, cnt); // 年月日时间字符串
-        memset(&t, 0, sizeof(t));
-
-        switch (log->cycle)
-        {
-            case LOG_CYCLE_MINUTE:
-            {
-                sscanf_s(tmp, "%04d%02d%02d%02d%02d", &t.tm_year, &t.tm_mon, &t.tm_mday, &t.tm_hour, &t.tm_min);
-                break;
-            }
-            case LOG_CYCLE_HOUR:
-            {
-                sscanf_s(tmp, "%04d%02d%02d%02d", &t.tm_year, &t.tm_mon, &t.tm_mday, &t.tm_hour);
-                break;
-            }
-            default:
-            {
-                sscanf_s(tmp, "%04d%02d%02d", &t.tm_year, &t.tm_mon, &t.tm_mday);
-                break;
-            }
-        }
-
-        t.tm_mon -= 1;      // 月(0-11)
-        t.tm_year -= 1900;  // 自1900年起
-        sec = (unsigned int)mktime(&t);
-
-        DD(log, "%s %s %u %u", data.cFileName, tmp, sec, del);
-
-        if (sec <= del)
-        {
-            snprintf(tmp, LOG_FILENAME_SIZE, "%s\\%s", log->path, data.cFileName);
+            char tmp[LOG_FILENAME_SIZE];
+            snprintf(tmp, LOG_FILENAME_SIZE, "%s\\%s", log->path, find.cFileName);
             _unlink(tmp);
-            DD(log, "unlink %s", tmp);
+            DD(log, "unlink %s\n", tmp);
         }
     }
-    while(FindNextFileA(err, &data));
+    while(FindNextFileA(handle, &find));
 }
 
 /**
@@ -203,86 +145,40 @@ void log_del_file(p_xt_log log)
  */
 void* log_thread(p_xt_log log)
 {
-    DD(log, "begin");
+    DD(log, "begin\n");
 
     bool reopen;
-    unsigned int now;
-    unsigned int del;
-    unsigned int sec = 0;
+    unsigned int second = 0;
+    unsigned int now_second;
+    unsigned int del_second;
+    unsigned int zone[] = {  0,    0, 28800,  28800 };
+    unsigned int unit[] = { 60, 3600, 86400, 604800 };
 
     while (log->run)
     {
-        msleep(100);
+        msleep(100); // 100ms
 
-        now = (unsigned int)time(NULL);
+        now_second = (unsigned int)time(NULL);
 
-        if (now == sec)
-        {
-            continue;
-        }
+        if (now_second == second) { continue; } // 1秒之内
 
-        sec = now;
+        second = now_second;
 
-        //DD(log, "%u", now);
+        DD(log, "now:%u\n", now_second);
 
-        switch (log->cycle)
-        {
-            case LOG_CYCLE_MINUTE:
-            {
-                reopen = ((now % 60) == 0);
-                break;
-            }
-            case LOG_CYCLE_HOUR:
-            {
-                reopen = ((now % 3600) == 0);
-                break;
-            }
-            case LOG_CYCLE_DAY:
-            {
-                reopen = (((now + 28800) % 86400) == 0);
-                break;
-            }
-            case LOG_CYCLE_WEEK:
-            {
-                reopen = (((now + 28800) % 604800) == 0);
-                break;
-            }
-        }
+        reopen = (((now_second + zone[log->cycle]) % unit[log->cycle]) == 0);
 
-        if (!reopen)
-        {
-            continue;
-        }
+        if (!reopen) { continue; } // 创建新的文件
 
-        switch (log->cycle)
-        {
-            case LOG_CYCLE_MINUTE:
-            {
-                del = now - log->backup * 60;
-                break;
-            }
-            case LOG_CYCLE_HOUR:
-            {
-                del = now - log->backup * 3600;
-                break;
-            }
-            case LOG_CYCLE_DAY:
-            {
-                del = now - log->backup * 86400;
-                break;
-            }
-            case LOG_CYCLE_WEEK:
-            {
-                del = now - log->backup * 604800;
-                break;
-            }
-        }
+        del_second = now_second - log->backup * unit[log->cycle];
 
-        log_add_new(log, now, false);
-        log_del_old(log, del);
+        DD(log, "del:%u\n", now_second);
+
+        log_add_new(log, now_second, false);
+        log_del_old(log, del_second);
     }
 
-    DD(log, "exit");
+    DD(log, "exit\n");
     return NULL;
 }
 
@@ -294,23 +190,23 @@ void* log_thread(p_xt_log log)
  */
 int log_init(p_xt_log log)
 {
-    int ret = log_add_new(log, (int)time(NULL), log->clean_log);
+    int ret = log_add_new(log, (int)time(NULL), log->clr_log);
 
     if (0 != ret)
     {
-        printf("%s|open file:%s error:%d\n", __FUNCTION__, log->filename, errno);
+        printf("%s|open file:%s error:%d ret:%d\n", __FUNCTION__, log->filename, errno, ret);
         return -2;
     }
 
+    DD(log, "日志格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容\n");
+
     if (0 == log->backup)   // 不删除旧文件,就不需要创建线程
     {
-        DD(log, "backup:%d", log->backup);
+        DD(log, "backup:%d\n", log->backup);
         return 0;
     }
 
-    g_xt_log = log;
-
-    log->run = true;
+    log_del_file(log);      // 删除过期文件
 
     pthread_t tid;
 
@@ -318,15 +214,14 @@ int log_init(p_xt_log log)
 
     if (ret != 0)
     {
-        EE(log, "create thread fail, error:%d", ret);
+        EE(log, "create thread fail, error:%d\n", ret);
         return -3;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    DD(log, "日志格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容");
-
-    log_del_file(log);      // 删除过期文件
+    g_xt_log = log;
+    log->run = true;
     return 0;
 }
 
@@ -337,14 +232,15 @@ int log_init(p_xt_log log)
  *\param[in]    level       日志级别(调试,信息,警告,错误)
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量
- *\param[in]    clean_log   首次打开日志文件时是否清空文件内容
- *\param[in]    clean_file  首次打开日志文件时是否删除已经过期文件
- *\param[in]    root        代码根目录长度,日志中只保留相对目录
+ *\param[in]    clr_log     首次打开日志文件时是否清空文件内容
+ *\param[in]    del_old     首次打开日志文件时是否删除已经过期文件
+ *\param[in]    root_len    代码根目录长度,日志中只保留相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, bool clean_log, bool clean_file, unsigned int root, p_xt_log log)
+int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup,
+                bool clr_log, bool del_old, unsigned int root_len, p_xt_log log)
 {
     if (NULL == filename || NULL == log)
     {
@@ -358,10 +254,23 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
     log->level       = level;
     log->cycle       = cycle;
     log->backup      = backup;
-    log->clean_log   = clean_log;
-    log->clean_file  = clean_file;
-    log->root        = root;
+    log->clr_log     = clr_log;
+    log->del_old     = del_old;
+    log->root_len    = root_len;
     log->run         = false;
+
+
+    if (LOG_LEVEL_ERROR > LOG_CYCLE_WEEK)
+    {
+        printf("%s|param level error\n", __FUNCTION__);
+        return -2;
+    }
+
+    if (cycle > LOG_CYCLE_WEEK)
+    {
+        printf("%s|param cycle error\n", __FUNCTION__);
+        return -3;
+    }
 
     return log_init(log);
 }
@@ -375,7 +284,7 @@ void log_uninit(p_xt_log log)
 {
     if (NULL == log || NULL == log->file)
     {
-        DD(log, "log is null");
+        DD(log, "log is null\n");
         return;
     }
 
@@ -408,9 +317,6 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     struct tm       tm;
     struct timeval  tv;
 
-    va_list arg;
-    va_start(arg, fmt);
-
     gettimeofday(&tv, NULL);
     ts = tv.tv_sec;
     localtime_s(&tm, &ts);
@@ -418,19 +324,22 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     len = snprintf(buf, LOG_BUFF_SIZE, "%02d%02d%02d%03d|%d%c%d|%s:%d|%s|",
                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000,
                    getpid(), XT_LOG_LEVEL[level], gettid(),
-                   file + log->root, line, func);
+                   file + log->root_len, line, func);
+
+    va_list arg;
+    va_start(arg, fmt);
 
     len += vsnprintf(&buf[len], LOG_BUFF_SIZE - len, fmt, arg);
+
+    va_end(arg);
 
     if (len >= LOG_BUFF_SIZE)
     {
         len = (int)strlen(buf); // 当buff不够时,vsnprintf返回的是需要的长度
     }
 
-    buf[len] = '\n';
-
-    fwrite(buf, 1, len + 1, log->file); // 加1为多了个\n
+    fwrite(buf, 1, len, log->file); // 加1为多了个\n
     fflush(log->file);
 
-    va_end(arg);
+
 }

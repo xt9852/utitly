@@ -7,7 +7,28 @@
  *\brief    MD5模块实现
  */
 #include "xt_md5.h"
-#include "xt_log.h"
+
+#ifdef XT_LOG
+    #include "xt_log.h"
+#else
+    #include <stdio.h>
+    #include <stdlib.h>
+#ifdef _WINDOWS
+    #define D(...)      printf(__VA_ARGS__)
+    #define I(...)      printf(__VA_ARGS__)
+    #define W(...)      printf(__VA_ARGS__)
+    #define E(...)      printf(__VA_ARGS__)
+#else
+    #define D(args...)  printf(args)
+    #define I(args...)  printf(args)
+    #define W(args...)  printf(args)
+    #define E(args...)  printf(args)
+#endif
+#endif
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 /*
 MD5码以512位分组来处理输入的信息,且每一分组又被划分为16个32位子分组
@@ -143,7 +164,7 @@ const char *MD5_STRING = "0123456789ABCDEF";
  *\param[out]   md5         MD5数据
  *\return       0           成功
  */
-int md5_get(const char *data, int data_len, p_xt_md5 md5)
+int md5_get(const unsigned char *data, int data_len, p_xt_md5 md5)
 {
     if (NULL == data || data_len <= 0 || NULL == md5)
     {
@@ -166,7 +187,7 @@ int md5_get(const char *data, int data_len, p_xt_md5 md5)
     unsigned __int64 bit_count = data_len * 8;
     unsigned char    buff[128];
 
-    D("md5 times:%d remain:%d padding:%d", times, remain, padding);
+    D("md5 times:%d remain:%d padding:%d\n", times, remain, padding);
 
     for (unsigned int i = 0; i < times; i++)
     {
@@ -199,7 +220,7 @@ int md5_get(const char *data, int data_len, p_xt_md5 md5)
  *\param[out]   md5_str     MD5字符串,大写字母
  *\return       0           成功
  */
-int md5_get_str(const char *data, int data_len, char *md5_str)
+int md5_get_str(const unsigned char *data, int data_len, char *md5_str)
 {
     if (NULL == data || data_len <= 0 || NULL == md5_str)
     {
@@ -217,7 +238,7 @@ int md5_get_str(const char *data, int data_len, char *md5_str)
 
     unsigned char *p = (char*)&md5;
 
-    D("A:%x B:%x C:%x D:%x", md5.A, md5.B, md5.C, md5.D);
+    D("A:%x B:%x C:%x D:%x\n", md5.A, md5.B, md5.C, md5.D);
 
     for (int i = 0; i < 16; i++)
     {

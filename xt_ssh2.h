@@ -8,7 +8,6 @@
  */
 #ifndef _XT_SSH2_
 #define _XT_SSH2_
-#include "xt_log.h"
 
 #define CMD_SIZE        16                              ///< 命令组大小
 #define CMD_STR_SIZE    32                              ///< 命令字符串组大小
@@ -16,6 +15,9 @@
 #define USERNAME_SIZE   128                             ///< 用户名称字符串组大小
 #define PASSWORD_SIZE   128                             ///< 用户密码串组大小
 
+#ifndef bool
+#define bool unsigned char
+#endif
 
 /// SSH类型
 enum
@@ -27,16 +29,14 @@ enum
 /// SSH数据回调
 typedef int(*XT_SSH_DATA_CALLBACK)(void *param, const char *data, unsigned int data_len);
 
-/// 命令
-typedef struct _xt_ssh_cmd
+typedef struct _xt_ssh_cmd                              ///  命令
 {
     char            str[CMD_STR_SIZE];                  ///< 命令字符串
     unsigned int    sleep;                              ///< 等待时间秒
 
 } xt_ssh_cmd, *p_xt_ssh_cmd;                            ///< 命令指针
 
-/// SSH数据
-typedef struct _xt_ssh
+typedef struct _xt_ssh                                  ///  SSH数据
 {
     int                     type;                       ///< 0-ssh,1-sftp
     bool                    run;                        ///< 是否运行
@@ -61,7 +61,7 @@ typedef struct _xt_ssh
 } xt_ssh, *p_xt_ssh;                                    ///< SSH数据指针
 
 /**
- *\brief        SSH初始化
+ *\brief                    SSH初始化
  *\param[in]    proc        显示回调
  *\param[in]    param       显示回调自定义参数
  *\param[out]   ssh         SSH数据
@@ -70,7 +70,7 @@ typedef struct _xt_ssh
 int ssh_init(XT_SSH_DATA_CALLBACK proc, void *param, p_xt_ssh ssh);
 
 /**
- *\brief        SSH初始化
+ *\brief                    SSH初始化
  *\param[in]    addr        服务器地址
  *\param[in]    port        服务器端口
  *\param[in]    username    用户名称
@@ -87,7 +87,7 @@ int ssh_init_ex(const char *addr, unsigned short port, const char *username, con
                 XT_SSH_DATA_CALLBACK proc, void *param, p_xt_ssh ssh);
 
 /**
- *\brief        发送命令并接收数据
+ *\brief                    发送命令并接收数据
  *\param[in]    ssh         SSH参数数据
  *\param[in]    cmd         命令字符串
  *\param[in]    cmd_len     命令字符串长度
@@ -98,7 +98,7 @@ int ssh_init_ex(const char *addr, unsigned short port, const char *username, con
 int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf, unsigned int buf_size);
 
 /**
- *\brief        SSH的rz命令上传文件
+ *\brief                    SSH的rz命令上传文件
  *\param[in]    ssh         SSH数据
  *\param[in]    local       本地文件名
  *\param[in]    remote      远端文件名
@@ -107,7 +107,7 @@ int ssh_send_cmd(p_xt_ssh ssh, const char *cmd, unsigned int cmd_len, char *buf,
 int ssh_send_cmd_rz(p_xt_ssh ssh, const char *local, const char *remote);
 
 /**
- *\brief        SSH的sz命令下载文件
+ *\brief                    SSH的sz命令下载文件
  *\param[in]    ssh         SSH数据
  *\param[in]    remote      远端文件名
  *\param[in]    local       本地文件名

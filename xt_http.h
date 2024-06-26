@@ -8,7 +8,10 @@
  */
 #ifndef _XT_HTTP_H_
 #define _XT_HTTP_H_
-#include "xt_log.h"
+
+#ifndef BOOL
+#define bool unsigned char
+#endif
 
 #define ARG_SIZE        128                 ///< 参数数量
 
@@ -28,6 +31,7 @@ typedef struct _xt_http_arg                 ///  URL参数
     const char         *key;                ///< 参数名称
 
     const char         *value;              ///< 参数值
+
     unsigned int        value_len;          ///< 参数值长度
 
 } xt_http_arg, *p_xt_http_arg;
