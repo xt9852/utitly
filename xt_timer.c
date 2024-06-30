@@ -210,6 +210,11 @@ int timer_init(p_xt_timer_set set)
  */
 int timer_uninit(p_xt_timer_set set)
 {
+    if (NULL == set)
+    {
+        return -1;
+    }
+
     set->run = false;
 
     return list_uninit(&set->timer_list);
@@ -228,7 +233,7 @@ int timer_uninit(p_xt_timer_set set)
 int timer_add_cycle(p_xt_timer_set set, const char *name, unsigned int cycle,
                     p_xt_thread_pool thread_pool, XT_THREAD_POOL_TASK_CALLBACK task, void *param)
 {
-    if (NULL == set || NULL == name || NULL == thread_pool || NULL == task)
+    if (NULL == set || NULL == name || 0 == cycle || NULL == thread_pool || NULL == task || !set->run || !thread_pool->run)
     {
         return -1;
     }
@@ -269,7 +274,10 @@ int timer_add_cron(p_xt_timer_set set,
                    unsigned char hour, unsigned char min, unsigned char sec,
                    p_xt_thread_pool thread_pool, XT_THREAD_POOL_TASK_CALLBACK task, void *param)
 {
-    if (NULL == set || NULL == name || NULL == thread_pool || NULL == task)
+    if (NULL == set || NULL == name ||
+        type < TIMER_CRON_YDAY || type > TIMER_CRON_MINUTE ||
+        yday > 365 || wday > 6 || mon > 11 || mday < 1 || mday > 31 || hour > 23 || min > 59 || sec > 59 ||
+        NULL == thread_pool || NULL == task || !set->run || !thread_pool->run)
     {
         return -1;
     }

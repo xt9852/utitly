@@ -11,12 +11,11 @@
 
 #include "xt_list.h"
 
-
 typedef struct _xt_memory_pool          ///  内存池
 {
-    int     mem_size;                   ///< 内存块大小
-    int     count;                      ///< 总分配内存块数
-    xt_list free;                       ///< 空闲的内存块链表
+    unsigned int    mem_size;           ///< 内存块大小
+    unsigned int    count;              ///< 总分配内存块数
+    xt_list         free;               ///< 空闲的内存块链表
 
 } xt_memory_pool, *p_xt_memory_pool;
 
@@ -27,7 +26,7 @@ typedef struct _xt_memory_pool          ///  内存池
  *\param[in]    count   初始内存块数量
  *\return       0       成功
  */
-int memory_pool_init(p_xt_memory_pool pool, int size, int count);
+int memory_pool_init(p_xt_memory_pool pool, unsigned int size, unsigned int count);
 
 /**
  *\brief                反初始化内存池

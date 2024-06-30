@@ -22,10 +22,10 @@
     #define I(...)          log_write(g_xt_log, FFL, LOG_LEVEL_INFO,  __VA_ARGS__)      ///< 信息
     #define W(...)          log_write(g_xt_log, FFL, LOG_LEVEL_WARN,  __VA_ARGS__)      ///< 警告
     #define E(...)          log_write(g_xt_log, FFL, LOG_LEVEL_ERROR, __VA_ARGS__)      ///< 错误
-    #define DD(log, ...)    log_write(log,        FFL, LOG_LEVEL_DEBUG, __VA_ARGS__)    ///< 调试,指定文件输出
-    #define II(log, ...)    log_write(log,        FFL, LOG_LEVEL_INFO,  __VA_ARGS__)    ///< 信息,指定文件输出
-    #define WW(log, ...)    log_write(log,        FFL, LOG_LEVEL_WARN,  __VA_ARGS__)    ///< 警告,指定文件输出
-    #define EE(log, ...)    log_write(log,        FFL, LOG_LEVEL_ERROR, __VA_ARGS__)    ///< 错误,指定文件输出
+    #define DD(log, ...)    log_write(log,      FFL, LOG_LEVEL_DEBUG, __VA_ARGS__)      ///< 调试,指定文件输出
+    #define II(log, ...)    log_write(log,      FFL, LOG_LEVEL_INFO,  __VA_ARGS__)      ///< 信息,指定文件输出
+    #define WW(log, ...)    log_write(log,      FFL, LOG_LEVEL_WARN,  __VA_ARGS__)      ///< 警告,指定文件输出
+    #define EE(log, ...)    log_write(log,      FFL, LOG_LEVEL_ERROR, __VA_ARGS__)      ///< 错误,指定文件输出
 #else
     #define D(args...)      log_write(g_xt_log, FFL, LOG_LEVEL_DEBUG, ##args)           ///< 调试
     #define I(args...)      log_write(g_xt_log, FFL, LOG_LEVEL_INFO,  ##args)           ///< 信息
@@ -52,7 +52,6 @@ typedef enum _LOG_CYCLE
     LOG_CYCLE_WEEK,                                                                     ///< 周
 
 } LOG_CYCLE;
-
 
 typedef struct _xt_log                                                                  ///  日志信息
 {
@@ -102,7 +101,7 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
  *\param[in]    log         日志数据
  *\return       无
  */
-void log_uninit(p_xt_log log);
+int log_uninit(p_xt_log log);
 
 /**
  *\brief        写日志

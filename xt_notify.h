@@ -10,14 +10,14 @@
 #define _XT_SYS_ICON_H_
 #include <windows.h>
 
-typedef void (*XT_NOTIFY_MENU_CALLBACK)(HWND wnd, void*); ///< 托盘菜单回调接口
+typedef void (*XT_NOTIFY_MENU_CALLBACK)(HWND wnd, void* param); ///< 托盘菜单回调接口
 
-typedef struct _notify_menu_info                ///  系统托盘数据
+typedef struct _notify_menu_info                                ///  系统托盘数据
 {
-    int                     id;                 ///< 消息ID
-    short                   name[64];           ///< 菜单名称
-    void                   *param;              ///< 自定义参数
-    XT_NOTIFY_MENU_CALLBACK proc;               ///< 菜单回调
+    int                     id;                                 ///< 消息ID
+    short                   name[64];                           ///< 菜单名称
+    void                   *param;                              ///< 自定义参数
+    XT_NOTIFY_MENU_CALLBACK proc;                               ///< 菜单回调
 
 } notify_menu_info, *p_notify_menu_info;
 
@@ -30,7 +30,7 @@ typedef struct _notify_menu_info                ///  系统托盘数据
  *\param[in]    menu            菜单数据
  *\return       0               成功
  */
-int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_count, notify_menu_info menu[]);
+int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int menu_count, notify_menu_info menu[]);
 
 /**
  *\brief                        windows消息循环

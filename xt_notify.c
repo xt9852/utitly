@@ -148,9 +148,9 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
  *\param[in]    menu            菜单数据
  *\return       0               成功
  */
-int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_count, notify_menu_info menu[])
+int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int menu_count, notify_menu_info menu[])
 {
-    if (NULL == instance || NULL == title)
+    if (NULL == instance || NULL == title || 0 == menu_count || NULL == menu)
     {
         E("param is null\n");
         return -1;
@@ -159,7 +159,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, int menu_cou
     g_notify_menu       = CreatePopupMenu();
     g_notify_menu_count = menu_count;
 
-    for (int i = 0; i < menu_count; i++)
+    for (unsigned int i = 0; i < menu_count; i++)
     {
         g_notify_menu_data[i] = menu[i];
         AppendMenuW(g_notify_menu, MF_STRING, menu[i].id, menu[i].name);

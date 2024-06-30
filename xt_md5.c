@@ -164,9 +164,9 @@ const char *MD5_STRING = "0123456789ABCDEF";
  *\param[out]   md5         MD5数据
  *\return       0           成功
  */
-int md5_get(const unsigned char *data, int data_len, p_xt_md5 md5)
+int md5_get(const unsigned char *data, unsigned int data_len, p_xt_md5 md5)
 {
-    if (NULL == data || data_len <= 0 || NULL == md5)
+    if (NULL == data || 0 == data_len || NULL == md5)
     {
         return -1;
     }
@@ -220,9 +220,9 @@ int md5_get(const unsigned char *data, int data_len, p_xt_md5 md5)
  *\param[out]   md5_str     MD5字符串,大写字母
  *\return       0           成功
  */
-int md5_get_str(const unsigned char *data, int data_len, char *md5_str)
+int md5_get_str(const unsigned char *data, unsigned int data_len, char *md5_str)
 {
-    if (NULL == data || data_len <= 0 || NULL == md5_str)
+    if (NULL == data || 0 == data_len || NULL == md5_str)
     {
         return -1;
     }

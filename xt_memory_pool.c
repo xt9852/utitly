@@ -34,9 +34,9 @@
  *\param[in]    count   初始内存块数量,要大于1,后续每次增加其一半
  *\return       0       成功
  */
-int memory_pool_init(p_xt_memory_pool pool, int size, int count)
+int memory_pool_init(p_xt_memory_pool pool, unsigned int size, unsigned int count)
 {
-    if (NULL == pool || size <= 0 || count <= 1)
+    if (NULL == pool || 0 == size || count < 2)
     {
         return -1;
     }
@@ -47,7 +47,7 @@ int memory_pool_init(p_xt_memory_pool pool, int size, int count)
 
     list_init(&(pool->free));
 
-    for (int i = 0; i < count; i++)
+    for (unsigned int i = 0; i < count; i++)
     {
         list_tail_push(&(pool->free), malloc(size));
     }

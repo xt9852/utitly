@@ -88,24 +88,4 @@ typedef struct _xt_http                     ///  HTTP服务数据
  */
 int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http);
 
-/**
- *\brief                    URI编码
- *\param[in]    in          原始的数据
- *\param[in]    in_len      原始的数据长度
- *\param[out]   out         编码后数据
- *\param[out]   out_len     输入数据缓冲区大小,输出编码后数据长度
- *\return       0           成功
- */
-int uri_encode(const char *in, int in_len, char *out, int *out_len);
-
-/**
- *\brief        URI解码
- *\param[in]    in          URI数据
- *\param[in]    in_len      URI数据长度
- *\param[out]   out         原始数据
- *\param[out]   out_len     输入数据缓冲区大小,输出解码后数据长度
- *\return       0           成功
- */
-int uri_decode(char *in, int in_len, char *out, int *out_len);
-
 #endif

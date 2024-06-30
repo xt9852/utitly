@@ -102,7 +102,7 @@ void log_del_file(p_xt_log log)
     DD(log, "del_second:%u\n", del_second);
 
     snprintf(fmt, LOG_FILENAME_SIZE, "%s\\%s.????????????.txt", log->path, log->filename);
-    DD(log, "find fmt:%s\n", fmt);
+    DD(log, "find   fmt:%s\n", fmt);
 
     HANDLE handle = FindFirstFileA(fmt, &find);
 
@@ -190,19 +190,54 @@ void* log_thread(p_xt_log log)
  */
 int log_init(p_xt_log log)
 {
+    if (NULL == log)
+    {
+        printf("%s|param is null\n", __FUNCTION__);
+        return -1;
+    }
+
+    if (NULL == log->path|| '\0' == log->path[0])
+    {
+        printf("%s|path is null\n", __FUNCTION__);
+        return -2;
+    }
+
+    if (NULL == log->filename|| '\0' == log->filename[0])
+    {
+        printf("%s|filename is null\n", __FUNCTION__);
+        return -3;
+    }
+
+    printf("filename:%s\n", log->filename);
+
+    if (log->level > LOG_CYCLE_WEEK)
+    {
+        printf("%s|param level error\n", __FUNCTION__);
+        return -4;
+    }
+
+    if (log->cycle > LOG_CYCLE_WEEK)
+    {
+        printf("%s|param cycle error\n", __FUNCTION__);
+        return -5;
+    }
+
     int ret = log_add_new(log, (int)time(NULL), log->clr_log);
 
     if (0 != ret)
     {
         printf("%s|open file:%s error:%d ret:%d\n", __FUNCTION__, log->filename, errno, ret);
-        return -2;
+        return -6;
     }
 
     DD(log, "日志格式:时时分分秒秒毫秒|进程ID日志级别(DIWE)线程ID|源文件:行号|函数名称|日志内容\n");
 
+    g_xt_log = log;         // 保存默认日志
+
     if (0 == log->backup)   // 不删除旧文件,就不需要创建线程
     {
-        DD(log, "backup:%d\n", log->backup);
+        log->run = false;
+        DD(log, "backup:0, dont need log thread\n");
         return 0;
     }
 
@@ -215,12 +250,11 @@ int log_init(p_xt_log log)
     if (ret != 0)
     {
         EE(log, "create thread fail, error:%d\n", ret);
-        return -3;
+        return -6;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    g_xt_log = log;
     log->run = true;
     return 0;
 }
@@ -242,7 +276,7 @@ int log_init(p_xt_log log)
 int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup,
                 bool clr_log, bool del_old, unsigned int root_len, p_xt_log log)
 {
-    if (NULL == filename || NULL == log)
+    if (NULL == path || NULL == filename || NULL == log)
     {
         printf("%s|param is null\n", __FUNCTION__);
         return -1;
@@ -259,19 +293,6 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
     log->root_len    = root_len;
     log->run         = false;
 
-
-    if (LOG_LEVEL_ERROR > LOG_CYCLE_WEEK)
-    {
-        printf("%s|param level error\n", __FUNCTION__);
-        return -2;
-    }
-
-    if (cycle > LOG_CYCLE_WEEK)
-    {
-        printf("%s|param cycle error\n", __FUNCTION__);
-        return -3;
-    }
-
     return log_init(log);
 }
 
@@ -280,18 +301,19 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
  *\param[in]    log         日志数据
  *\return       无
  */
-void log_uninit(p_xt_log log)
+int log_uninit(p_xt_log log)
 {
     if (NULL == log || NULL == log->file)
     {
-        DD(log, "log is null\n");
-        return;
+        printf("log is null\n");
+        return -1;
     }
 
     log->run = false;
     fflush(log->file);
     fclose(log->file);
     log->file = NULL;
+    return 0;
 }
 
 /**

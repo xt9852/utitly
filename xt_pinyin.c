@@ -220,11 +220,11 @@ int pinyin_init(const char *filename)
  *\param[out]   dst_len     目标串最大长,目标串长
  *\return       0           成功
  */
-int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len)
+int gbk_pinyin(const unsigned char *src, unsigned int src_len, char *dst, unsigned int *dst_len)
 {
-    if (NULL == src || NULL == dst)
+    if (NULL == src || NULL == dst || NULL == dst_len)
     {
-        printf("%s src,dst is null\n", __FUNCTION__);
+        printf("%s src,dst,dst_len is null\n", __FUNCTION__);
         return -1;
     }
 
@@ -240,7 +240,7 @@ int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len)
     unsigned char  ym_value;
     int            buff_pos;
 
-    for (int i = 0; i < src_len; )
+    for (unsigned int i = 0; i < src_len; )
     {
         // GBK/2, GBK/3, GBK/4
         if ((src[i] >= 0xb0 && src[i] <= 0xf7 && src[i + 1] >= 0xa1 && src[i + 1] <= 0xfe) ||
@@ -251,13 +251,11 @@ int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len)
 
             sm_value = g_pinyin[buff_pos];
             ym_value = g_pinyin[buff_pos + 1];
-/*
-            char info[MAX_PATH];
-            sprintf_s(info, MAX_PATH, "%c%c=0x%02x%02x pos:%5d sm=%02d ym=%02d pinyin:%s%s\n",
-                src[i], src[i + 1], src[i], src[i + 1], buff_pos,
-                sm_value, ym_value, g_pinyin_sm[sm_value].m, g_pinyin_ym[ym_value].m);
-            MessageBoxA(NULL, info, "pinyin",  MB_OK);
-*/
+
+            D("%c%c=0x%02x%02x pos:%5d sm=%02d ym=%02d pinyin:%s%s\n",
+               src[i], src[i + 1], src[i], src[i + 1], buff_pos,
+               sm_value, ym_value, g_pinyin_sm[sm_value].m, g_pinyin_ym[ym_value].m);
+
             if ((tail + g_pinyin_sm[sm_value].len) >= end)
             {
                 return -3;
@@ -284,12 +282,9 @@ int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len)
             {
                 return -5;
             }
-/*
-            char info[MAX_PATH];
-            sprintf_s(info, MAX_PATH, "%c%c=0x%02x%02x i:%d",
-            src[i], src[i + 1], src[i], src[i + 1], i);
-            MessageBoxA(NULL, info, "pinyin 2B",  MB_OK);
-*/
+
+            D("%c%c=0x%02x%02x i:%d\n", src[i], src[i + 1], src[i], src[i + 1], i);
+
             *tail++ = src[i];
             *tail++ = src[i + 1];
 
@@ -301,11 +296,9 @@ int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len)
             {
                 return -6;
             }
-/*
-            char info[MAX_PATH];
-            sprintf_s(info, MAX_PATH, "%c=0x%02x i:%d", src[i], src[i],i);
-            MessageBoxA(NULL, info, "pinyin 1B",  MB_OK);
-*/
+
+            D("%c=0x%02x i:%d\n", src[i], src[i],i);
+
             *tail++ = src[i];
 
             i++;

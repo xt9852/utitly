@@ -13,6 +13,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include "xt_http.h"
+#include "xt_uri.h"
 
 #ifdef XT_LOG
     #include "xt_log.h"
@@ -48,8 +49,6 @@ typedef struct _client_thread_param                                             
 
 } client_thread_param, *p_client_thread_param;
 
-const static char HEX_STR[] = "0123456789ABCDEF";                               ///< 十六进制字符
-
 const static char *g_http_code[] =                                              ///< 状态码
 {
     "200 OK",
@@ -66,129 +65,6 @@ const static char *g_http_type[] =                                              
     "image/jpg",
     "image/jpeg"
 };
-
-/**
- *\brief                    十六进制字符转数字
- *\param[in]    ch          十六进制字符
- *\return                   数字
- */
-char http_to_hex(char ch)
-{
-    if (ch >= '0' && ch <= '9')
-    {
-        return ch - '0';
-    }
-    else if (ch >= 'A' && ch <= 'F')
-    {
-        return ch - 'A' + 10;
-    }
-    else
-    {
-        E("ch:0x%02x\n", ch);
-        return -1;
-    }
-}
-
-/**
- *\brief                    URI编码
- *\param[in]    in          原始的数据
- *\param[in]    in_len      原始的数据长度
- *\param[out]   out         编码后数据
- *\param[out]   out_len     输入数据缓冲区大小,输出编码后数据长度
- *\return       0           成功
- */
-int uri_encode(const char *in, int in_len, char *out, int *out_len)
-{
-    if (NULL == in || NULL == out || NULL == out_len || *out_len < in_len * 3)
-    {
-        E("param null or buff too small\n");
-        return -1;
-    }
-
-    int j = 0;
-    unsigned char hex;
-
-    for (int i = 0; i < in_len; i++)
-    {
-        if ((in[i] >= '0' && in[i] <= '9') || (in[i] >= 'a' && in[i] <= '9') || (in[i] >= 'A' && in[i] <= 'Z'))
-        {
-            out[j++] = in[i];
-        }
-        else
-        {
-            hex = in[i];
-            out[j++] = '%';
-            out[j++] = HEX_STR[hex / 16];
-            out[j++] = HEX_STR[hex % 16];
-        }
-    }
-
-    out[j] = '\0';
-    *out_len = j;
-
-    return 0;
-}
-
-/**
- *\brief                    URI解码
- *\param[in]    in          URI数据
- *\param[in]    in_len      URI数据长度
- *\param[out]   out         原始数据
- *\param[out]   out_len     输入数据缓冲区大小,输出解码后数据长度
- *\return       0           成功
- */
-int uri_decode(char *in, int in_len, char *out, int *out_len)
-{
-    if (NULL == in || NULL == out || NULL == out_len || *out_len < in_len)
-    {
-        E("param null or buff too small\n");
-        return -1;
-    }
-
-    int   pos = 0;
-    int   len = 0;
-    char *beg = in;
-    char  hex[2];
-
-    char *token = strtok_s(beg, "%", &beg);
-
-    for (int i = 0; NULL != token; i++)
-    {
-        if (0 == i)
-        {
-            pos = len = strlen(token);
-            strcpy_s(out, len + 1, token);
-        }
-        else
-        {
-            hex[0] = http_to_hex(token[0]);
-
-            if (hex[0] < 0)
-            {
-                return -2;
-            }
-
-            hex[1] = http_to_hex(token[1]);
-
-            if (hex[1] < 0)
-            {
-                return -3;
-            }
-
-            out[pos++] = hex[0] * 16 + hex[1];
-
-            len = strlen(token) - 2;
-
-            strcpy_s(out + pos, len + 1, token + 2);
-
-            pos += len;
-        }
-
-        token = strtok_s(NULL, "%", &beg);
-    }
-
-    return 0;
-}
 
 /**
  *\brief                    得到URI中的参数,/index.html?arg1=1&arg2=2
@@ -536,8 +412,9 @@ void* http_server_thread(p_xt_http http)
  */
 int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_http http)
 {
-    if (NULL == ip || NULL == http)
+    if (NULL == ip || 0 == port || NULL == proc || NULL == http)
     {
+        E("param is null\n");
         return -1;
     }
 

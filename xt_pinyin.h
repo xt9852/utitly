@@ -32,6 +32,6 @@ int pinyin_init(const char *filename);
  *\param[out]   dst_len     目标串最大长,目标串长
  *\return       0           成功
  */
-int gbk_pinyin(const unsigned char *src, int src_len, char *dst, int *dst_len);
+int gbk_pinyin(const unsigned char *src, unsigned int src_len, char *dst, unsigned int *dst_len);
 
 #endif

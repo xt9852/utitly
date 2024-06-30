@@ -8,7 +8,6 @@
  */
 #ifndef _XT_LIST_H_
 #define _XT_LIST_H_
-
 #include <pthread.h>
 
 /// 链表

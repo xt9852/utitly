@@ -284,7 +284,7 @@ void* monitor_thread(p_xt_monitor monitor)
  */
 int monitor_init(p_xt_monitor monitor, p_xt_list list, p_xt_memory_pool pool)
 {
-    if (NULL == monitor)
+    if (NULL == monitor || NULL == list || NULL == pool)
     {
         return -1;
     }

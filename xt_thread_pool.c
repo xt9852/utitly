@@ -72,7 +72,7 @@ void* thread_pool_thread(p_xt_thread_pool pool)
  */
 int thread_pool_init(p_xt_thread_pool pool, unsigned int count)
 {
-    if (NULL == pool)
+    if (NULL == pool || 0 == count)
     {
         return -1;
     }
@@ -149,7 +149,7 @@ int thread_pool_uninit(p_xt_thread_pool pool)
  */
 int thread_pool_put(p_xt_thread_pool pool, XT_THREAD_POOL_TASK_CALLBACK proc, void *param)
 {
-    if (NULL == pool || NULL == proc)
+    if (NULL == pool || NULL == proc || !(pool->run))
     {
         return -1;
     }

@@ -404,6 +404,11 @@ shutdown:
  */
 int ssh_init(XT_SSH_DATA_CALLBACK proc, void *param, p_xt_ssh ssh)
 {
+    if (NULL == proc || NULL == ssh || NULL == ssh->addr || 0 == ssh->port)
+    {
+        return -1;
+    }
+    
     ssh->run   = true;
     ssh->init  = false;
     ssh->proc  = proc;
