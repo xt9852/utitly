@@ -17,17 +17,10 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #define D(...)      printf(__VA_ARGS__);printf("\n")
+    #define I(...)      printf(__VA_ARGS__);printf("\n")
+    #define W(...)      printf(__VA_ARGS__);printf("\n")
+    #define E(...)      printf(__VA_ARGS__);printf("\n")
 #endif
 
 NOTIFYICONDATAA     g_notify_data           = {0};      ///< 系统托盘数量
@@ -152,7 +145,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int
 {
     if (NULL == instance || NULL == title || 0 == menu_count || NULL == menu)
     {
-        E("param is null\n");
+        E("param is null");
         return -1;
     }
 
@@ -172,7 +165,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int
 
     if (0 == RegisterClassA(&wc))                       // 0-失败
     {
-        E("RegisterClass %s fail\n", title);
+        E("RegisterClass %s fail", title);
         return -2;
     }
 
@@ -189,7 +182,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int
 
     if (NULL == wnd)
     {
-        E("CreateWindow %s fail\n", title);
+        E("CreateWindow %s fail", title);
         return -3;
     }
 
@@ -202,13 +195,13 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int
 
     if (!Shell_NotifyIconA(NIM_ADD, &g_notify_data))
     {
-        E("Shell_NotifyIcon %s fail\n", title);
+        E("Shell_NotifyIcon %s fail", title);
         return -4;
     }
 
     SetTimer(wnd, 0, 1000, NULL);
 
-    D("ok\n");
+    D("ok");
     return 0;
 }
 

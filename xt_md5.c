@@ -13,17 +13,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 #ifndef NULL
@@ -187,7 +187,7 @@ int md5_get(const unsigned char *data, unsigned int data_len, p_xt_md5 md5)
     unsigned __int64 bit_count = data_len * 8;
     unsigned char    buff[128];
 
-    D("md5 times:%d remain:%d padding:%d\n", times, remain, padding);
+    D("md5 times:%d remain:%d padding:%d", times, remain, padding);
 
     for (unsigned int i = 0; i < times; i++)
     {
@@ -238,7 +238,7 @@ int md5_get_str(const unsigned char *data, unsigned int data_len, char *md5_str)
 
     unsigned char *p = (char*)&md5;
 
-    D("A:%x B:%x C:%x D:%x\n", md5.A, md5.B, md5.C, md5.D);
+    D("A:%x B:%x C:%x D:%x", md5.A, md5.B, md5.C, md5.D);
 
     for (int i = 0; i < 16; i++)
     {

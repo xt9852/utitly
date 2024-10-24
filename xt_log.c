@@ -27,7 +27,7 @@ void log_get_filename(p_xt_log log, time_t timestamp, char *filename, int max)
     struct tm tm;
     localtime_s(&tm, &timestamp);
 
-    snprintf(filename, max, "%s.%d%02d%02d%02d%02d.txt", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
+    snprintf(filename, max, "%s.%d%02d%02d%02d%02d.log", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
 }
 
 /**
@@ -83,7 +83,7 @@ void log_del_file(p_xt_log log)
 
     DD(log, "del_second:%u", del_second);
 
-    snprintf(fmt, LOG_FILENAME_SIZE, "%s\\%s.????????????.txt", log->path, log->filename);
+    snprintf(fmt, LOG_FILENAME_SIZE, "%s\\%s.????????????.log", log->path, log->filename);
     DD(log, "FindFirstFileA:%s", fmt);
 
     HANDLE handle = FindFirstFileA(fmt, &find);
@@ -94,7 +94,7 @@ void log_del_file(p_xt_log log)
         return;
     }
 
-    snprintf(fmt, LOG_FILENAME_SIZE, "%s.%%04d%%02d%%02d%%02d%%02d.txt", log->filename);
+    snprintf(fmt, LOG_FILENAME_SIZE, "%s.%%04d%%02d%%02d%%02d%%02d.log", log->filename);
     DD(log, "sscanf:%s", fmt);
 
     do
@@ -145,8 +145,6 @@ void* log_thread(p_xt_log log)
         if (now_second == second) { continue; } // 1秒之内
 
         second = now_second;
-
-        DD(log, "now:%u", now_second);
 
         reopen = (((now_second + zone[log->cycle]) % unit[log->cycle]) == 0);
 

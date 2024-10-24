@@ -14,17 +14,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 /// base64字符
@@ -107,7 +107,7 @@ int base64_encode(const unsigned char *data, unsigned int data_len, char *base64
 {
     if (NULL == data || NULL == base64)
     {
-        E("param null\n");
+        E("param null");
         return -1;
     }
 
@@ -120,7 +120,7 @@ int base64_encode(const unsigned char *data, unsigned int data_len, char *base64
 
     if (*base64_len <= len)
     {
-        E("buff too small\n");
+        E("buff too small");
         return -2;
     }
 
@@ -167,7 +167,7 @@ int base64_decode(const char *base64, unsigned int base64_len, unsigned char *da
 {
     if (NULL == base64 || 0 == base64_len || NULL == data || *data_len < (base64_len + 3) / 4 * 3)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -223,6 +223,6 @@ int base64_decode(const char *base64, unsigned int base64_len, unsigned char *da
     *data_len = times * 3 - padding;
     data[*data_len] = '\0';
 
-    D("times:%d padding:%d len:%d\n", times, padding, *data_len);
+    D("times:%d padding:%d len:%d", times, padding, *data_len);
 	return 0;
 }

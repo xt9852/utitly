@@ -14,17 +14,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 /**
@@ -33,7 +33,7 @@
  */
 void* thread_pool_thread(p_xt_thread_pool pool)
 {
-    D("begin\n");
+    D("begin");
 
     p_xt_thread_pool_task task;
 
@@ -55,11 +55,11 @@ void* thread_pool_thread(p_xt_thread_pool pool)
         }
         else
         {
-            E("get task null\n");
+            E("get task null");
         }
     }
 
-    D("exit\n");
+    D("exit");
     return NULL;
 }
 
@@ -100,14 +100,14 @@ int thread_pool_init(p_xt_thread_pool pool, unsigned int count)
 
         if (ret != 0)
         {
-            E("create thread fail, E:%d\n", ret);
+            E("create thread fail, E:%d", ret);
             return -3;
         }
 
         pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
     }
 
-    D("ok\n");
+    D("ok");
     return 0;
 }
 

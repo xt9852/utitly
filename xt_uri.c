@@ -15,17 +15,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 const static char HEX_STR[] = "0123456789ABCDEF";                               ///< 十六进制字符
@@ -47,7 +47,7 @@ char http_to_hex(char ch)
     }
     else
     {
-        E("ch:0x%02x\n", ch);
+        E("ch:0x%02x", ch);
         return -1;
     }
 }
@@ -64,7 +64,7 @@ int uri_encode(const char *in, unsigned int in_len, char *out, unsigned int *out
 {
     if (NULL == in || 0 == in_len || NULL == out || NULL == out_len || *out_len < in_len * 3)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -102,9 +102,9 @@ int uri_encode(const char *in, unsigned int in_len, char *out, unsigned int *out
  */
 int uri_decode(const char *in, unsigned int in_len, char *out, unsigned int *out_len)
 {
-    if (NULL == in || 0 == in_len || NULL == out || NULL == out_len || *out_len < in_len)
+    if (NULL == in || 0 == in_len || NULL == out || NULL == out_len || *out_len <= in_len)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -113,6 +113,8 @@ int uri_decode(const char *in, unsigned int in_len, char *out, unsigned int *out
     char  hex[2];
     const char *beg = in;
     const char *ptr = NULL;
+
+    D("%s %u %s %u", in, in_len, out, *out_len);
 
     while (ptr = strchr(beg, '%'))
     {
@@ -131,6 +133,8 @@ int uri_decode(const char *in, unsigned int in_len, char *out, unsigned int *out
         beg = ptr + 3;
     }
 
+    D("remain:%s", beg);
+
     if ('\0' != *beg)
     {
         strcpy_s(out + len, *out_len - len, beg);
@@ -140,6 +144,8 @@ int uri_decode(const char *in, unsigned int in_len, char *out, unsigned int *out
     {
         out[len] = '\0';
     }
+
+    D("out_len:%d", len);
 
     *out_len = len;
     return ret;

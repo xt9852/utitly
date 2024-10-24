@@ -16,17 +16,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 /**
@@ -41,7 +41,7 @@ int utf8_unicode(const unsigned char *src, unsigned int src_len, unsigned short 
 {
     if (NULL == src || 0 == src_len || NULL == dst || NULL == dst_short_len)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -50,7 +50,7 @@ int utf8_unicode(const unsigned char *src, unsigned int src_len, unsigned short 
 
     if (len >= *dst_short_len)
     {
-        E("too short\n");
+        E("too short");
         return -2;
     }
 
@@ -75,7 +75,7 @@ int unicode_gbk(const unsigned short *src, unsigned int src_short_len, unsigned 
 {
     if (NULL == src || 0 == src_short_len || NULL == dst || NULL == dst_len)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -83,7 +83,7 @@ int unicode_gbk(const unsigned short *src, unsigned int src_short_len, unsigned 
 
     if (len >= *dst_len)
     {
-        E("too short\n");
+        E("too short");
         return -2;
     }
 
@@ -107,7 +107,7 @@ int unicode_utf8(const unsigned short *src, unsigned int src_short_len, unsigned
 {
     if (NULL == src || 0 == src_short_len || NULL == dst || NULL == dst_len)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -115,7 +115,7 @@ int unicode_utf8(const unsigned short *src, unsigned int src_short_len, unsigned
 
     if (len >= *dst_len)
     {
-        E("too short\n");
+        E("too short");
         return -2;
     }
 
@@ -139,7 +139,7 @@ int gbk_utf8(const unsigned char *src, unsigned int src_len, unsigned char *dst,
 {
     if (NULL == src || 0 == src_len || NULL == dst || NULL == dst_len)
     {
-        E("param null or buff too small\n");
+        E("param null or buff too small");
         return -1;
     }
 
@@ -148,7 +148,7 @@ int gbk_utf8(const unsigned char *src, unsigned int src_len, unsigned char *dst,
 
     if (len >= *dst_len)
     {
-        E("too short\n");
+        E("too short");
         return -2;
     }
 
@@ -164,7 +164,7 @@ int gbk_utf8(const unsigned char *src, unsigned int src_len, unsigned char *dst,
 
     if (len >= *dst_len)
     {
-        E("too short\n");
+        E("too short");
         free(tmp);
         return -3;
     }

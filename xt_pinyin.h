@@ -9,6 +9,8 @@
 #ifndef _XT_PINYIN_H_
 #define _XT_PINYIN_H_
 
+#ifdef _WINDOWS
+
 /**
  *\brief                    从资源中加载拼音数据
  *\param[in]    res_type    资源类名,"PINYIN"
@@ -16,6 +18,8 @@
  *\return       0           成功
  */
 int pinyin_init_res(char *res_type, int res_id);
+
+#endif
 
 /**
  *\brief                    从文件中加载拼音数据

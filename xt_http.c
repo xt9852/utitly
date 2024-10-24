@@ -20,17 +20,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 #ifndef true
@@ -83,8 +83,11 @@ int http_get_arg(p_xt_http_data data)
 
     *arg++ = '\0';  // 后移一位到参数
 
+    D("arg:%s", arg);
+
     int i;
     int len;
+    int out;
     char *key;
     char *value;
 
@@ -92,6 +95,8 @@ int http_get_arg(p_xt_http_data data)
 
     for (i = 0; NULL != key; i++)
     {
+        D("key:%s", key);
+
         value = strchr(key, '=');
 
         if (NULL == value)
@@ -105,10 +110,16 @@ int http_get_arg(p_xt_http_data data)
             len = strlen(value);
         }
 
-        if (uri_decode(value, len, value, &len) != 0)   // 使用同一块内存
+        D("value:%s len:%d", value, len);
+
+        out = len + 1;
+
+        if (len > 0 && uri_decode(value, len, value, &out) != 0)   // 使用同一块内存
         {
             return -1;
         }
+
+        D("decode:%s", value);
 
         data->arg[i].key = key;
         data->arg[i].value = value;
@@ -116,9 +127,10 @@ int http_get_arg(p_xt_http_data data)
 
         key = strtok_s(NULL, "&", &arg);
 
-        D("key[%d]:%s len:%u value:%s\n", i, data->arg[i].key, len, value);
+        D("key[%d]:%s len:%u value:%s", i, data->arg[i].key, len, value);
     }
 
+    D("arg_count:%d", i);
     data->arg_count = i;
     return 0;
 }
@@ -138,7 +150,7 @@ int http_get_uri(char *buf, int buf_size, p_xt_http_data data)
 
     if (NULL == end)
     {
-        E("dont have ' '\n");
+        E("dont have ' '");
         return -1;
     }
 
@@ -163,16 +175,18 @@ int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size
 
     if (len < 0)
     {
-        E("recv failed, errno %d\n", errno);
+        E("recv failed, errno %d", errno);
         return -1;
     }
     else if (len == 0) // Connection closed
     {
-        D("connection closed\n");
+        D("connection closed");
         return -2;
     }
 
     buf[len] = 0;
+
+    D(buf);
 
     if (0 != strncmp(buf, "GET", 3))
     {
@@ -186,23 +200,25 @@ int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size
 
     if (0 != ret)
     {
-        E("http_get_uri fail\n");
+        E("http_get_uri fail");
         return -3;
     }
 
-    D("sock:%d recv:%d uri:%s\n", client_sock, len, data.uri);
+    D("sock:%d recv:%d uri:%s", client_sock, len, data.uri);
 
     ret = http_get_arg(&data);
 
     if (0 != ret)
     {
-        E("http_get_arg fail\n");
+        E("http_get_arg fail");
         return -4;
     }
 
+    D("arg_count:%d", data.arg_count);
+
     ret = http->proc(&data);
 
-    D("callback ret:%d\n", ret);
+    D("callback ret:%d", ret);
 
     if (0 != ret)
     {
@@ -216,12 +232,12 @@ int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size
     ret = sprintf_s(head, sizeof(head), HTTP_HEAD, g_http_code[ret], g_http_type[data.type], data.len);
 
     ret = send(client_sock, head, ret, 0);              // 发送头部
-    D("send head len:%d\n", ret);
+    D("send head len:%d", ret);
 
     ret = send(client_sock, data.content, data.len, 0); // 发送内容
-    D("send data len:%d\n", ret);
+    D("send data len:%d", ret);
 
-    D("\n%s\n", head);
+    D("\n%s", head);
     return 0;
 }
 
@@ -232,7 +248,7 @@ int http_client_request(p_xt_http http, int client_sock, char *buf, int buf_size
  */
 void* http_client_thread(p_client_thread_param param)
 {
-    D("running...\n");
+    D("running...");
 
     int   sock = param->client_sock;
     int   size = 10*1024*1024;
@@ -240,17 +256,17 @@ void* http_client_thread(p_client_thread_param param)
 
     while (http_client_request(param->http, sock, buff, size) >= 0);
 
-    D("close client socket %d\n", sock);
+    D("close client socket %d", sock);
 
     shutdown(sock, 0);
     closesocket(sock);
 
-    D("free param\n");
+    D("free param");
 
     free(buff);
     free(param);
 
-    D("exit\n");
+    D("exit");
     return NULL;
 }
 
@@ -261,7 +277,7 @@ void* http_client_thread(p_client_thread_param param)
  */
 int http_server_wait_client_connect(p_xt_http http)
 {
-    D("accepting...\n");
+    D("accepting...");
 
     int client_sock;
     char addr_str[64];
@@ -283,11 +299,11 @@ int http_server_wait_client_connect(p_xt_http http)
 
     if (client_sock < 0)
     {
-        E("accept fail, errno %d\n", errno);
+        E("accept fail, errno %d", errno);
         return -1;
     }
 
-    D("accept client socket:%d ip:%s\n", client_sock, addr_str);
+    D("accept client socket:%d ip:%s", client_sock, addr_str);
 
     p_client_thread_param param = (p_client_thread_param)malloc(sizeof(client_thread_param));
     param->client_sock = client_sock;
@@ -299,13 +315,13 @@ int http_server_wait_client_connect(p_xt_http http)
 
     if (ret != 0)
     {
-        E("create thread fail, E:%d\n", ret);
+        E("create thread fail, ret:%d", ret);
         return -1;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    D("create client thread\n");
+    D("create client thread");
     return 0;
 }
 
@@ -324,11 +340,11 @@ int http_server_create_listen_socket(p_xt_http http)
 
     if (listen_sock == INVALID_SOCKET)
     {
-        E("create socket fail, errno:%d errno:%d\n", listen_sock, GetLastError());
+        E("create socket fail, errno:%d errno:%d", listen_sock, GetLastError());
         return -1;
     }
 
-    D("create socket %d\n", listen_sock);
+    D("create socket %d", listen_sock);
 
     if (http->ipv4)
     {
@@ -350,24 +366,24 @@ int http_server_create_listen_socket(p_xt_http http)
     if (ret != 0)
     {
         closesocket(listen_sock);
-        E("bind socket fail, errno:%d\n", errno);
+        E("bind socket fail, errno:%d", errno);
         return -2;
     }
 
-    D("bind   socket %s\n", http->ipv4 ? "ipv4" : "ipv6");
+    D("bind   socket %s", http->ipv4 ? "ipv4" : "ipv6");
 
     ret = listen(listen_sock, 1);
 
     if (ret != 0)
     {
         closesocket(listen_sock);
-        E("listen socket fail, errno:%d\n", errno);
+        E("listen socket fail, errno:%d", errno);
         return -3;
     }
 
     http->listen_sock = listen_sock;
 
-    D("listen socket %s:%d\n", http->ip, http->port);
+    D("listen socket %s:%d", http->ip, http->port);
     return 0;
 }
 
@@ -378,14 +394,14 @@ int http_server_create_listen_socket(p_xt_http http)
  */
 void* http_server_thread(p_xt_http http)
 {
-    D("running...\n");
+    D("running...");
 
     int ret = http_server_create_listen_socket(http);
 
     if (0 != ret)
     {
-        E("create listen socket error\n");
-        E("exit\n");
+        E("create listen socket error");
+        E("exit");
         return NULL;
     }
 
@@ -397,7 +413,7 @@ void* http_server_thread(p_xt_http http)
     shutdown(http->listen_sock, 0);
     closesocket(http->listen_sock);
 
-    D("exit\n");
+    D("exit");
     return NULL;
 }
 
@@ -414,7 +430,7 @@ int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_h
 {
     if (NULL == ip || 0 == port || NULL == proc || NULL == http)
     {
-        E("param is null\n");
+        E("param is null");
         return -1;
     }
 
@@ -430,12 +446,12 @@ int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_h
 
     if (ret != 0)
     {
-        E("create thread fail, E:%d\n", ret);
+        E("create thread fail, ret:%d", ret);
         return -2;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    D("ok\n");
+    D("ok");
     return 0;
 }

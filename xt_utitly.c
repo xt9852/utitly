@@ -10,43 +10,42 @@
 #include <stdio.h>
 
 #ifdef _WINDOWS
+    #include <time.h>
+    #include <stdint.h>
+    #include <windows.h>
 
-#include <time.h>
-#include <stdint.h>
-#include <windows.h>
+    #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+    #define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
+    #else
+    #define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
+    #endif
 
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
-#else
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
-#endif
-
-/**
- *\brief                    得到精确时间,微秒级
- *\param[out]   tv          时间
- *\param[in]    tz          时区
- *\return       0           成功
- */
-int gettimeofday(struct timeval *tv, void *tz)
-{
-    if (NULL == tv)
+    /**
+    *\brief                    得到精确时间,微秒级
+    *\param[out]   tv          时间
+    *\param[in]    tz          时区
+    *\return       0           成功
+    */
+    int gettimeofday(struct timeval *tv, void *tz)
     {
-        return -1;
+        if (NULL == tv)
+        {
+            return -1;
+        }
+
+        FILETIME ft;
+        GetSystemTimeAsFileTime(&ft);   // 得到1601年1月1日的100纳秒数
+
+        // 得到微秒
+        uint64_t ms = ((uint64_t)ft.dwHighDateTime << 32 | ft.dwLowDateTime) / 10 - DELTA_EPOCH_IN_MICROSECS;
+
+        tv->tv_sec  = (long)(ms / 1000000UL);  // 秒
+        tv->tv_usec = (long)(ms % 1000000UL);  // 微秒
+        return 0;
     }
 
-    FILETIME ft;
-    GetSystemTimeAsFileTime(&ft);   // 得到1601年1月1日的100纳秒数
-
-    // 得到微秒
-    uint64_t ms = ((uint64_t)ft.dwHighDateTime << 32 | ft.dwLowDateTime) / 10 - DELTA_EPOCH_IN_MICROSECS;
-
-    tv->tv_sec  = (long)(ms / 1000000UL);  // 秒
-    tv->tv_usec = (long)(ms % 1000000UL);  // 微秒
-    return 0;
-}
-
 #else
-#include <sys/time.h>
+    #include <sys/time.h>
 #endif
 
 /**

@@ -17,17 +17,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 /**
@@ -46,7 +46,7 @@ int timer_check(p_xt_timer timer, void *param)
         {
             timer->cycle_next += timer->cycle_second;
 
-            D("name:%s now:%u next:%u\n", timer->name, now, timer->cycle_next);
+            D("name:%s now:%u next:%u", timer->name, now, timer->cycle_next);
 
             thread_pool_put(timer->thread_pool, timer->task.proc, timer->task.param);
         }
@@ -93,32 +93,32 @@ int timer_check(p_xt_timer timer, void *param)
             {
             case TIMER_CRON_YDAY:
                 {
-                    D("every year %d day %d:%d:%d : %s\n", timer->cron_yday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every year %d day %d:%d:%d : %s", timer->cron_yday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_WDAY:
                 {
-                    D("every week %d day %d:%d:%d : %s\n", timer->cron_wday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every week %d day %d:%d:%d : %s", timer->cron_wday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_YEAR:
                 {
-                    D("every year %d-%d %d:%d:%d : %s\n", timer->cron_mon, timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every year %d-%d %d:%d:%d : %s", timer->cron_mon, timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_MON:
                 {
-                    D("every month %d day %d:%d:%d : %s\n", timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every month %d day %d:%d:%d : %s", timer->cron_mday, timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_DAY:
                 {
-                    D("every day %d:%d:%d : %s\n", timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
+                    D("every day %d:%d:%d : %s", timer->cron_hour, timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             case TIMER_CRON_HOUR:
                 {
-                    D("%d:%d : %s\n", timer->cron_min, timer->cron_sec, timer->name);
+                    D("%d:%d : %s", timer->cron_min, timer->cron_sec, timer->name);
                     break;
                 }
             }
@@ -135,7 +135,7 @@ int timer_check(p_xt_timer timer, void *param)
  */
 void* timer_thread(p_xt_timer_set set)
 {
-    D("begin\n");
+    D("begin");
 
     unsigned int now;
     unsigned int sec = 0;
@@ -153,12 +153,12 @@ void* timer_thread(p_xt_timer_set set)
 
         sec = now;
 
-        //D("%u\n", now);
+        //D(now);
 
         list_proc(&(set->timer_list), timer_check, (void*)now);
     }
 
-    D("exit\n");
+    D("exit");
     return NULL;
 }
 
@@ -193,13 +193,13 @@ int timer_init(p_xt_timer_set set)
 
     if (ret != 0)
     {
-        E("create thread fail, E:%d\n", ret);
+        E("create thread fail, ret:%d", ret);
         return -3;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
-    D("ok\n");
+    D("ok");
     return 0;
 }
 

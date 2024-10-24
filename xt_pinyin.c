@@ -16,17 +16,17 @@
 #else
     #include <stdio.h>
     #include <stdlib.h>
-#ifdef _WINDOWS
-    #define D(...)      printf(__VA_ARGS__)
-    #define I(...)      printf(__VA_ARGS__)
-    #define W(...)      printf(__VA_ARGS__)
-    #define E(...)      printf(__VA_ARGS__)
-#else
-    #define D(args...)  printf(args)
-    #define I(args...)  printf(args)
-    #define W(args...)  printf(args)
-    #define E(args...)  printf(args)
-#endif
+    #ifdef _WINDOWS
+        #define D(...)      printf(__VA_ARGS__);printf("\n")
+        #define I(...)      printf(__VA_ARGS__);printf("\n")
+        #define W(...)      printf(__VA_ARGS__);printf("\n")
+        #define E(...)      printf(__VA_ARGS__);printf("\n")
+    #else
+        #define D(args...)  printf(args);printf("\n")
+        #define I(args...)  printf(args);printf("\n")
+        #define W(args...)  printf(args);printf("\n")
+        #define E(args...)  printf(args);printf("\n")
+    #endif
 #endif
 
 #ifndef bool
@@ -116,6 +116,8 @@ const xt_peyin g_pinyin_ym[] = {            ///< 拼音韵母
     { "u",    1},
 };
 
+#ifdef _WINDOWS
+
 /**
  *\brief                    从资源中加载拼音数据
  *\param[in]    res_type    资源类名,"PINYIN"
@@ -126,7 +128,7 @@ int pinyin_init_res(char *res_type, int res_id)
 {
     if (NULL == res_type)
     {
-        printf("%s type is null\n", __FUNCTION__);
+        printf("%s type is null", __FUNCTION__);
         return -1;
     }
 
@@ -134,7 +136,7 @@ int pinyin_init_res(char *res_type, int res_id)
 
     if (NULL == res)
 	{
-        printf("%s FindResource fail id:%d\n", __FUNCTION__, res_id);
+        printf("%s FindResource fail id:%d", __FUNCTION__, res_id);
         return -2;
     }
 
@@ -143,7 +145,7 @@ int pinyin_init_res(char *res_type, int res_id)
 
     if (NULL == res_global)
 	{
-        printf("%s LoadResource fail\n", __FUNCTION__);
+        printf("%s LoadResource fail", __FUNCTION__);
         return -3;
     }
 
@@ -158,7 +160,7 @@ int pinyin_init_res(char *res_type, int res_id)
 
     if (NULL == g_pinyin)
 	{
-        printf("%s LockResource fail\n", __FUNCTION__);
+        printf("%s LockResource fail", __FUNCTION__);
         return -4;
     }
 
@@ -167,6 +169,8 @@ int pinyin_init_res(char *res_type, int res_id)
     D("ok");
     return 0;
 }
+
+#endif
 
 /**
  *\brief                    从文件中加载拼音数据
@@ -186,7 +190,7 @@ int pinyin_init(const char *filename)
 
     if (NULL == fp)
     {
-        D("open file:%s error:%d\n", filename, GetLastError());
+        D("open file:%s error:%d", filename, GetLastError());
         return -1;
     }
 
@@ -208,7 +212,7 @@ int pinyin_init(const char *filename)
 
     g_pinyin_malloc = true;
 
-    D("ok\n");
+    D("ok");
     return 0;
 }
 
@@ -224,13 +228,13 @@ int gbk_pinyin(const unsigned char *src, unsigned int src_len, char *dst, unsign
 {
     if (NULL == src || NULL == dst || NULL == dst_len)
     {
-        printf("%s src,dst,dst_len is null\n", __FUNCTION__);
+        printf("%s src,dst,dst_len is null", __FUNCTION__);
         return -1;
     }
 
     if (NULL == g_pinyin)
     {
-        printf("%s pinyin data is null\n", __FUNCTION__);
+        printf("%s pinyin data is null", __FUNCTION__);
         return -2;
     }
 
@@ -252,7 +256,7 @@ int gbk_pinyin(const unsigned char *src, unsigned int src_len, char *dst, unsign
             sm_value = g_pinyin[buff_pos];
             ym_value = g_pinyin[buff_pos + 1];
 
-            D("%c%c=0x%02x%02x pos:%5d sm=%02d ym=%02d pinyin:%s%s\n",
+            D("%c%c=0x%02x%02x pos:%5d sm=%02d ym=%02d pinyin:%s%s",
                src[i], src[i + 1], src[i], src[i + 1], buff_pos,
                sm_value, ym_value, g_pinyin_sm[sm_value].m, g_pinyin_ym[ym_value].m);
 
@@ -283,7 +287,7 @@ int gbk_pinyin(const unsigned char *src, unsigned int src_len, char *dst, unsign
                 return -5;
             }
 
-            D("%c%c=0x%02x%02x i:%d\n", src[i], src[i + 1], src[i], src[i + 1], i);
+            D("%c%c=0x%02x%02x i:%d", src[i], src[i + 1], src[i], src[i + 1], i);
 
             *tail++ = src[i];
             *tail++ = src[i + 1];
@@ -297,7 +301,7 @@ int gbk_pinyin(const unsigned char *src, unsigned int src_len, char *dst, unsign
                 return -6;
             }
 
-            D("%c=0x%02x i:%d\n", src[i], src[i],i);
+            D("%c=0x%02x i:%d", src[i], src[i],i);
 
             *tail++ = src[i];
 
