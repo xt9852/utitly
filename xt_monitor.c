@@ -115,7 +115,7 @@ int monitor_blacklist(p_xt_monitor monitor, const char* txt)
  */
 void* monitor_thread(p_xt_monitor monitor)
 {
-    D("begin\n");
+    D("begin");
 
     // 打开目录,得到目录的句柄
     HANDLE handle = CreateFileA(monitor->localpath,
@@ -132,7 +132,7 @@ void* monitor_thread(p_xt_monitor monitor)
         return (void*)-1;
     }
 
-    D("monit %s ok\n", monitor->localpath);
+    D("monit %s ok", monitor->localpath);
 
     int buf_len = 10 * 1024 * 1024;
     char *buf = malloc(buf_len);

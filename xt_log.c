@@ -329,12 +329,15 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
 
     va_end(arg);
 
-    if (len >= LOG_BUFF_SIZE)
+    if (len < LOG_BUFF_SIZE)
+    {
+        buf[len++] = '\n';
+    }
+    else
     {
         len = (int)strlen(buf); // 当buf不够时,vsnprintf返回的是需要的长度
     }
 
     fwrite(buf, 1, len, log->file);
-    fwrite("\n", 1, 1, log->file);
     fflush(log->file);
 }
