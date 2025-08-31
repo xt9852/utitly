@@ -164,40 +164,38 @@ void* log_thread(p_xt_log log)
 
 /**
  *\brief                    初始化日志
- *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean_log,clean_file
+ *\param[in]    path        日志文件路径
+ *\param[in]    code_len    源代码根目录长度,日志中只保留源代码相对目录
+ *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init(p_xt_log log)
+int log_init(const char *path, unsigned int code_len, p_xt_log log)
 {
-    if (NULL == log)
+    if (NULL == path || NULL == log)
     {
         P("param is null");
         return -1;
     }
 
-    if (NULL == log->path|| '\0' == log->path[0])
-    {
-        P("path is null");
-        return -2;
-    }
+    strncpy_s(log->path, LOG_FILENAME_SIZE, path, LOG_FILENAME_SIZE - 1);
 
-    if (NULL == log->filename|| '\0' == log->filename[0])
+    if (NULL == log->filename || '\0' == log->filename[0])
     {
         P("filename is null");
-        return -3;
+        return -2;
     }
 
     if (log->level > LOG_LEVEL_ERROR)
     {
         P("param level error");
-        return -4;
+        return -3;
     }
 
     if (log->cycle > LOG_CYCLE_WEEK)
     {
         P("param cycle error");
-        return -5;
+        return -4;
     }
 
     int ret = log_add_new(log, (int)time(NULL));
@@ -205,7 +203,7 @@ int log_init(p_xt_log log)
     if (0 != ret)
     {
         P("open file fail");
-        return -6;
+        return -5;
     }
 
     DD(log, "------------------------------------------------------------");
@@ -234,6 +232,7 @@ int log_init(p_xt_log log)
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
 
+    log->code_len = code_len;
     log->run = true;
     return 0;
 }
@@ -245,13 +244,13 @@ int log_init(p_xt_log log)
  *\param[in]    level       日志级别(调试,信息,警告,错误)
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量
- *\param[in]    root_len    代码根目录长度,日志中只保留相对目录
+ *\param[in]    code_len    源代码根目录长度,日志中只保留源代码相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
 int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup,
-                unsigned int root_len, p_xt_log log)
+                unsigned int code_len, p_xt_log log)
 {
     if (NULL == path || NULL == filename || NULL == log)
     {
@@ -265,10 +264,10 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
     log->level       = level;
     log->cycle       = cycle;
     log->backup      = backup;
-    log->root_len    = root_len;
+    log->code_len    = code_len;
     log->run         = false;
 
-    return log_init(log);
+    return log_init(path, code_len, log);
 }
 
 /**
@@ -321,7 +320,7 @@ void log_write(p_xt_log log, const char *file, const char *func, int line, int l
     len = snprintf(buf, LOG_BUFF_SIZE, "%02d%02d%02d%03d|%d%c%d|%s:%d|%s|",
                    tm.tm_hour, tm.tm_min, tm.tm_sec, tv.tv_usec / 1000,
                    getpid(), XT_LOG_LEVEL[level], gettid(),
-                   file + log->root_len, line, func);
+                   file + log->code_len, line, func);
 
     va_list arg;
     va_start(arg, fmt);

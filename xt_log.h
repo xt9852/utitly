@@ -69,7 +69,7 @@ typedef struct _xt_log                                                          
     LOG_CYCLE       cycle;                                                              ///< 日志文件保留周期(时,天,周)
     unsigned int    backup;                                                             ///< 日志文件保留数量
 
-    unsigned int    root_len;                                                           ///< 代码根目录长度,日志中只保留相对目录
+    unsigned int    code_len;                                                           ///< 源代码根目录长度,日志中只保留源代码相对目录
     bool            run;                                                                ///< 日志线程是否运行
     FILE*           file;                                                               ///< 日志文件句柄
 
@@ -79,11 +79,13 @@ p_xt_log            g_xt_log;                                                   
 
 /**
  *\brief                    初始化日志
+ *\param[in]    path        日志文件路径
+ *\param[in]    code_len    源代码根目录长度,日志中只保留源代码相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init(p_xt_log log);
+int log_init(const char *path, unsigned int code_len, p_xt_log log);
 
 /**
  *\brief                    初始化日志
@@ -92,13 +94,13 @@ int log_init(p_xt_log log);
  *\param[in]    level       日志级别(调试,信息,警告,错误)
  *\param[in]    cycle       日志文件保留周期(时,天,周)
  *\param[in]    backup      日志文件保留数量,0-全部保留
- *\param[in]    root_len    代码根目录长度,日志中只保留相对目录
+ *\param[in]    code_len    源代码根目录长度,日志中只保留源代码相对目录
  *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
 int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup, 
-                unsigned int root_len, p_xt_log log);
+                unsigned int code_len, p_xt_log log);
 
 /**
  *\brief        反初始化日志

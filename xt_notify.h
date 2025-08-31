@@ -14,7 +14,6 @@ typedef void (*XT_NOTIFY_MENU_CALLBACK)(HWND wnd, void* param); ///< 托盘菜�
 
 typedef struct _notify_menu_info                                ///  系统托盘数据
 {
-    int                     id;                                 ///< 消息ID
     short                   name[64];                           ///< 菜单名称
     void                   *param;                              ///< 自定义参数
     XT_NOTIFY_MENU_CALLBACK proc;                               ///< 菜单回调

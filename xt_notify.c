@@ -23,11 +23,13 @@
     #define E(...)      printf(__VA_ARGS__);printf("\n")
 #endif
 
-NOTIFYICONDATAA     g_notify_data           = {0};      ///< 系统托盘数量
-HMENU               g_notify_menu           = NULL;     ///< 菜单
-notify_menu_info    g_notify_menu_data[64]  = {0};      ///< 菜单数据
-int                 g_notify_menu_count     = 0;        ///< 菜单数量
-int                 g_notify_menu_time      = 0;        ///< 菜单定时
+#define             MENU_SIZE                       64
+
+NOTIFYICONDATAA     g_notify_data                   = {0};  ///< 系统托盘数量
+HMENU               g_notify_menu                   = NULL; ///< 菜单
+notify_menu_info    g_notify_menu_data[MENU_SIZE]   = {0};  ///< 菜单数据
+int                 g_notify_menu_count             = 0;    ///< 菜单数量
+int                 g_notify_menu_time              = 0;    ///< 菜单定时
 
 /**
  *\brief                        定时任务
@@ -95,13 +97,12 @@ void notify_on_destory(HWND wnd)
 void notify_on_command(HWND wnd, WPARAM w)
 {
     int id = LOWORD(w);
+    
+    D("notify_on_command id:%d", id);
 
-    for (int i = 0; i < g_notify_menu_count; i++)
+    if (id >= 0 && id < g_notify_menu_count)
     {
-        if (id == g_notify_menu_data[i].id)
-        {
-            g_notify_menu_data[i].proc(wnd, g_notify_menu_data[i].param);
-        }
+        g_notify_menu_data[id].proc(wnd, g_notify_menu_data[id].param);
     }
 }
 
@@ -143,9 +144,9 @@ LRESULT CALLBACK notify_window_msg_callback(HWND wnd, UINT msg, WPARAM w, LPARAM
  */
 int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int menu_count, notify_menu_info menu[])
 {
-    if (NULL == instance || NULL == title || 0 == menu_count || NULL == menu)
+    if (NULL == instance || NULL == title || 0 == menu_count || menu_count > MENU_SIZE || NULL == menu)
     {
-        E("param is null");
+        E("param is error");
         return -1;
     }
 
@@ -155,7 +156,7 @@ int notify_init(HINSTANCE instance, int icon_id, const char *title, unsigned int
     for (unsigned int i = 0; i < menu_count; i++)
     {
         g_notify_menu_data[i] = menu[i];
-        AppendMenuW(g_notify_menu, MF_STRING, menu[i].id, menu[i].name);
+        AppendMenuW(g_notify_menu, MF_STRING, i, menu[i].name);
     }
 
     // 窗体类
