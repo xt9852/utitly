@@ -27,7 +27,7 @@ void log_get_filename(p_xt_log log, time_t timestamp, char *filename, int max)
     struct tm tm;
     localtime_s(&tm, &timestamp);
 
-    snprintf(filename, max, "%s.%d%02d%02d%02d%02d.log", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
+    snprintf(filename, max, "%s.%d%02d%02d.log", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 }
 
 /**
@@ -77,8 +77,7 @@ void log_del_file(p_xt_log log)
     char                fmt[LOG_FILENAME_SIZE];
     struct tm           file_time;
     unsigned int        file_second;
-    unsigned int        unit[] = { 60,  3600, 86400, 604800 };
-    unsigned int        del_second = (unsigned int)time(NULL) - log->backup * unit[log->cycle];
+    unsigned int        del_second = (unsigned int)time(NULL) - log->backup * 86400;
     WIN32_FIND_DATAA    find;
 
     DD(log, "del_second:%u", del_second);
@@ -94,7 +93,7 @@ void log_del_file(p_xt_log log)
         return;
     }
 
-    snprintf(fmt, LOG_FILENAME_SIZE, "%s.%%04d%%02d%%02d%%02d%%02d.log", log->filename);
+    snprintf(fmt, LOG_FILENAME_SIZE, "%s.%%4d%%02d%%02d.log", log->filename);
     DD(log, "sscanf:%s", fmt);
 
     do
@@ -102,7 +101,7 @@ void log_del_file(p_xt_log log)
         if (find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { continue; }
 
         memset(&file_time, 0, sizeof(file_time));
-        sscanf_s(find.cFileName, fmt, &file_time.tm_year, &file_time.tm_mon, &file_time.tm_mday, &file_time.tm_hour, &file_time.tm_min);
+        sscanf_s(find.cFileName, fmt, &file_time.tm_year, &file_time.tm_mon, &file_time.tm_mday);
 
         file_time.tm_mon -= 1;      // 月(0-11)
         file_time.tm_year -= 1900;  // 自1900年起
@@ -133,8 +132,6 @@ void* log_thread(p_xt_log log)
     unsigned int second = 0;
     unsigned int now_second;
     unsigned int del_second;
-    unsigned int zone[] = {  0,    0, 28800,  28800 };
-    unsigned int unit[] = { 60, 3600, 86400, 604800 };
 
     while (log->run)
     {
@@ -146,11 +143,11 @@ void* log_thread(p_xt_log log)
 
         second = now_second;
 
-        reopen = (((now_second + zone[log->cycle]) % unit[log->cycle]) == 0);
+        reopen = (((now_second + 28800) % 86400) == 0); // 28800为时区
 
         if (!reopen) { continue; } // 创建新的文件
 
-        del_second = now_second - log->backup * unit[log->cycle];
+        del_second = now_second - log->backup * 86400;
 
         DD(log, "del:%u", now_second);
 
@@ -166,7 +163,7 @@ void* log_thread(p_xt_log log)
  *\brief                    初始化日志
  *\param[in]    path        日志文件路径
  *\param[in]    code_len    源代码根目录长度,日志中只保留源代码相对目录
- *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
+ *\param[out]   log         日志数据,需要filename,level,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
@@ -192,18 +189,12 @@ int log_init(const char *path, unsigned int code_len, p_xt_log log)
         return -3;
     }
 
-    if (log->cycle > LOG_CYCLE_WEEK)
-    {
-        P("param cycle error");
-        return -4;
-    }
-
     int ret = log_add_new(log, (int)time(NULL));
 
     if (0 != ret)
     {
         P("open file fail");
-        return -5;
+        return -4;
     }
 
     DD(log, "------------------------------------------------------------");
@@ -242,15 +233,13 @@ int log_init(const char *path, unsigned int code_len, p_xt_log log)
  *\param[in]    path        日志文件路径
  *\param[in]    filename    日志文件名前缀
  *\param[in]    level       日志级别(调试,信息,警告,错误)
- *\param[in]    cycle       日志文件保留周期(时,天,周)
- *\param[in]    backup      日志文件保留数量
+ *\param[in]    backup      日志文件保留几天,0-全部保留
  *\param[in]    code_len    源代码根目录长度,日志中只保留源代码相对目录
- *\param[out]   log         日志数据,需要filename,level,cycle,backup,clean
+ *\param[out]   log         日志数据,需要filename,level,backup,clean
  *\attention    log         需要转递到线线程中,不要释放此内存,否则会野指针
  *\return       0           成功
  */
-int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYCLE cycle, unsigned int backup,
-                unsigned int code_len, p_xt_log log)
+int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, unsigned int backup, unsigned int code_len, p_xt_log log)
 {
     if (NULL == path || NULL == filename || NULL == log)
     {
@@ -262,7 +251,6 @@ int log_init_ex(const char *path, const char *filename, LOG_LEVEL level, LOG_CYC
     strncpy_s(log->filename, LOG_FILENAME_SIZE, filename, LOG_FILENAME_SIZE - 1);
     log->file        = NULL;
     log->level       = level;
-    log->cycle       = cycle;
     log->backup      = backup;
     log->code_len    = code_len;
     log->run         = false;
