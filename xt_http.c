@@ -396,15 +396,6 @@ void* http_server_thread(p_xt_http http)
 {
     D("running...");
 
-    int ret = http_server_create_listen_socket(http);
-
-    if (0 != ret)
-    {
-        E("create listen socket error");
-        E("exit");
-        return NULL;
-    }
-
     while (http->run)
     {
         http_server_wait_client_connect(http);
@@ -440,14 +431,22 @@ int http_init(const char *ip, unsigned short port, XT_HTTP_CALLBACK proc, p_xt_h
     http->ipv4 = (NULL != strchr(ip, '.'));
     strcpy_s(http->ip, sizeof(http->ip), ip);
 
+    int ret = http_server_create_listen_socket(http);
+
+    if (0 != ret)
+    {
+        E("create listen socket error");
+        return -2;
+    }
+
     pthread_t tid;
 
-    int ret = pthread_create(&tid, NULL, http_server_thread, http);
+    ret = pthread_create(&tid, NULL, http_server_thread, http);
 
     if (ret != 0)
     {
         E("create thread fail, ret:%d", ret);
-        return -2;
+        return -3;
     }
 
     pthread_detach(tid);    // 使线程处于分离状态,线程资源由系统回收
