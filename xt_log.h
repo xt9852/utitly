@@ -55,6 +55,8 @@ typedef struct _xt_log                                                          
 {
     char            path[LOG_FILENAME_SIZE];                                            ///< 日志文件路径
     char            filename[LOG_FILENAME_SIZE];                                        ///< 日志文件名
+    unsigned int    date;                                                               ///< 日志文件日期
+    
     LOG_LEVEL       level;                                                              ///< 日志级别(调试,信息,警告,错误)
     unsigned int    backup;                                                             ///< 日志文件保留几天
 

@@ -6,29 +6,14 @@
  *\date     2016.12.07
  *\brief    日志模块实现
  */
+#include <share.h>
 #include <pthread.h>
 #include "xt_log.h"
 #include "xt_utitly.h"
 
 #define LOG_BUFF_SIZE   10240               ///< 日志缓冲区在小
-
+  
 const static char XT_LOG_LEVEL[] = "DIWE";  ///< 日志级别字符
-
-/**
- *\brief                    设置日志文件名
- *\param[in]    log         日志数据
- *\param[in]    timestamp   时间戳
- *\param[out]   filename    文件名
- *\param[in]    max         文件名最长
- *\return                   无
- */
-void log_get_filename(p_xt_log log, time_t timestamp, char *filename, int max)
-{
-    struct tm tm;
-    localtime_s(&tm, &timestamp);
-
-    snprintf(filename, max, "%s.%d%02d%02d.log", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-}
 
 /**
  *\brief                    新建日志文件
@@ -43,11 +28,16 @@ int log_add_new(p_xt_log log, time_t timestamp)
         fclose(log->file);
     }
 
+    struct tm tm;
+    localtime_s(&tm, &timestamp);
+    log->date = (tm.tm_year + 1900) * 10000 + (tm.tm_mon + 1) * 100 + tm.tm_mday;
+
     char filename[LOG_FILENAME_SIZE];
+    snprintf(filename, LOG_FILENAME_SIZE, "%s.%d.log", log->filename, log->date);
 
-    log_get_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
+    log->file = _fsopen(filename, "ab+", _SH_DENYNO);
 
-    return fopen_s(&(log->file), filename, "ab+");
+    return (log->file == NULL);
 }
 
 /**
@@ -58,9 +48,12 @@ int log_add_new(p_xt_log log, time_t timestamp)
  */
 void log_del_old(p_xt_log log, time_t timestamp)
 {
-    char filename[LOG_FILENAME_SIZE];
 
-    log_get_filename(log, timestamp, filename, LOG_FILENAME_SIZE);
+    struct tm tm;
+    localtime_s(&tm, &timestamp);
+
+    char filename[LOG_FILENAME_SIZE];
+    snprintf(filename, LOG_FILENAME_SIZE, "%s.%d%02d%02d.log", log->filename, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 
     _unlink(filename);      // 删除旧文件
 
